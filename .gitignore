@@ -1,0 +1,15 @@
+
+
+# c++ stuff
+obj
+bin
+
+# nodejs stuff
+node_modules
+package-lock.json
+
+# jest stuff
+coverage
+junit.xml
+test-report.json
+
