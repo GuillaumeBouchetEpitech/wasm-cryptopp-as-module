@@ -22,11 +22,15 @@
 //
 //
 
-void DiffieHellmanClient::generateKeys()
+void DiffieHellmanClient::generateKeys(const std::string& inP, const std::string& inQ, const std::string& inG)
 {
   CryptoPP::AutoSeededRandomPool tmp_rnd;
 
-  _dh.AccessGroupParameters().Initialize(_static_p, _static_q, _static_g);
+  CryptoPP::Integer tmpP(inP.c_str());
+  CryptoPP::Integer tmpQ(inQ.c_str());
+  CryptoPP::Integer tmpG(inG.c_str());
+
+  _dh.AccessGroupParameters().Initialize(tmpP, tmpQ, tmpG);
 
   if(!_dh.GetGroupParameters().ValidateGroup(tmp_rnd, 3))
   {
@@ -46,8 +50,6 @@ void DiffieHellmanClient::generateKeys()
     std::string_view msg = "Failed to verify order of the subgroup";
     std::cerr << msg << std::endl;
     throw std::runtime_error(msg.data());
-
-    // throw std::runtime_error("Failed to verify order of the subgroup");
   }
 
   //////////////////////////////////////////////////////////////
@@ -57,90 +59,35 @@ void DiffieHellmanClient::generateKeys()
   _dh.GenerateKeyPair(tmp_rnd, _priv, _pub);
 }
 
-void DiffieHellmanClient::computeSharedSecretFromHexStrPtr(const void* inDataPtr, uint64_t inDataSize)
-{
-  const std::string_view tmpHexStr(reinterpret_cast<const char*>(inDataPtr), inDataSize);
-  computeSharedSecretFromHexStr(tmpHexStr);
-}
-void DiffieHellmanClient::computeSharedSecretFromHexStr(const std::string_view inHexOtherPublic)
+void DiffieHellmanClient::computeSharedSecretFromHexStr(const std::string& inHexOtherPublic)
 {
   std::string decStr = helpers::hexAsDecString(inHexOtherPublic);
-  const uint8_t* dataPtr = reinterpret_cast<const uint8_t*>(decStr.data());
-  computeSharedSecretSecBytesBlockRawPtr(dataPtr, decStr.size());
-}
-void DiffieHellmanClient::computeSharedSecretSecBytesBlockRawPtr(const void* inDataPtr, uint64_t inDataSize)
-{
-  computeSharedSecretSecBytesBlock(CryptoPP::SecByteBlock(reinterpret_cast<const uint8_t*>(inDataPtr), std::size_t(inDataSize)));
-}
-void DiffieHellmanClient::computeSharedSecretSecBytesBlock(const CryptoPP::SecByteBlock& inOtherPublic)
-{
+
+  CryptoPP::SecByteBlock otherPublic(reinterpret_cast<const uint8_t*>(decStr.c_str()), decStr.size());
+
   _shared = CryptoPP::SecByteBlock(_dh.AgreedValueLength());
 
-  if(!_dh.Agree(_shared, _priv, inOtherPublic))
+  if(!_dh.Agree(_shared, _priv, otherPublic))
   {
-    throw std::runtime_error("Failed to reach shared secret");
+    std::string_view msg = "Failed to reach shared secret";
+    std::cerr << msg << std::endl;
+    throw std::runtime_error(msg.data());
   }
+
 }
 
-const CryptoPP::SecByteBlock& DiffieHellmanClient::getPublicKey() const
-{
-  return _pub;
-}
 std::string DiffieHellmanClient::getPublicKeyAsHexStr() const
 {
-  return helpers::decAsHexString(_pub.BytePtr(), _pub.SizeInBytes());
-}
-char* DiffieHellmanClient::getPublicKeyAsHexStrPtr() const
-{
-  const std::string tmpStr = helpers::decAsHexString(_pub.BytePtr(), _pub.SizeInBytes());
-
-  const std::size_t tmpSize = tmpStr.size();
-  char* pMessage = new char[tmpSize + 1];
-  std::memcpy(pMessage, tmpStr.data(), tmpSize + 1);
-  pMessage[tmpSize] = '\0';
-  return pMessage;
+  const char* pData = reinterpret_cast<const char*>(_pub.BytePtr());
+  const std::string_view publicKey(pData, _pub.SizeInBytes());
+  return helpers::decAsHexString(publicKey);
 }
 
-const CryptoPP::SecByteBlock& DiffieHellmanClient::getSharedSecret() const
-{
-  return _shared;
-}
 std::string DiffieHellmanClient::getSharedSecretAsHexStr() const
 {
-  return helpers::decAsHexString(_shared.BytePtr(), _shared.SizeInBytes());
-}
-char* DiffieHellmanClient::getSharedSecretAsHexStrPtr() const
-{
-  const std::string tmpStr = helpers::decAsHexString(_shared.BytePtr(), _shared.SizeInBytes());
-
-  const std::size_t tmpSize = tmpStr.size();
-  char* pMessage = new char[tmpSize + 1];
-  std::memcpy(pMessage, tmpStr.data(), tmpSize + 1);
-  pMessage[tmpSize] = '\0';
-  return pMessage;
+  const char* pData = reinterpret_cast<const char*>(_shared.BytePtr());
+  const std::string_view sharedSecret(pData, _shared.SizeInBytes());
+  return helpers::decAsHexString(sharedSecret);
 }
 
-//
-//
-//
-//
-//
-
-// RFC 5114, 1024-bit MODP Group with 160-bit Prime Order Subgroup
-// http://tools.ietf.org/html/rfc5114#section-2.1
-CryptoPP::Integer DiffieHellmanClient::_static_p = CryptoPP::Integer("0xB10B8F96A080E01DDE92DE5EAE5D54EC52C99FBCFB06A3C6"
-	"9A6A9DCA52D23B616073E28675A23D189838EF1E2EE652C0"
-	"13ECB4AEA906112324975C3CD49B83BFACCBDD7D90C4BD70"
-	"98488E9C219A73724EFFD6FAE5644738FAA31A4FF55BCCC0"
-	"A151AF5F0DC8B4BD45BF37DF365C1A65E68CFDA76D4DA708"
-	"DF1FB2BC2E4A4371");
-
-CryptoPP::Integer DiffieHellmanClient::_static_g = CryptoPP::Integer("0xA4D1CBD5C3FD34126765A442EFB99905F8104DD258AC507F"
-	"D6406CFF14266D31266FEA1E5C41564B777E690F5504F213"
-	"160217B4B01B886A5E91547F9E2749F4D7FBD7D3B9A92EE1"
-	"909D0D2263F80A76A6A24C087A091F531DBF0A0169B6A28A"
-	"D662A4D18E73AFA32D779D5918D08BC8858F4DCEF97C2A24"
-	"855E6EEB22B3B2E5");
-
-CryptoPP::Integer DiffieHellmanClient::_static_q = CryptoPP::Integer("0xF518AA8781A8DF278ABA4E7D64B7CB9D49462353");
 

@@ -43,7 +43,7 @@ const runDiffieHellmanClientTest = (logger, wasmModule) => {
   printImportantText(logger, "DiffieHellmanClient: client A initialize");
 
   logger.log("client A created");
-  const clientA = new wasmModule.DiffieHellmanClientJs();
+  const clientA = new wasmModule.MyDiffieHellmanClient();
   logger.log("client A generate keys");
   clientA.generateKeys();
   logger.log("client A provide public key");
@@ -55,7 +55,7 @@ const runDiffieHellmanClientTest = (logger, wasmModule) => {
   printImportantText(logger, "DiffieHellmanClient: client B initialize");
 
   logger.log("client B created");
-  const clientB = new wasmModule.DiffieHellmanClientJs();
+  const clientB = new wasmModule.MyDiffieHellmanClient();
   logger.log("client B generate keys");
   clientB.generateKeys();
   logger.log("client B provide public key");
@@ -110,8 +110,8 @@ const runDiffieHellmanClientTest = (logger, wasmModule) => {
   //
 
 
-  clientA.dispose();
-  clientB.dispose();
+  clientA.delete();
+  clientB.delete();
 
   logger.log("");
   logger.log("");
@@ -137,7 +137,7 @@ const runAesSymmetricTest = (logger, wasmModule) => {
   logger.log("#################################################################################################");
   logger.log("#################################################################################################");
   logger.log("##########");
-  logger.log("########## AesSymmetricCipher / AesSymmetricDecipher test");
+  logger.log("########## AesSymmetricCipher test");
   logger.log("##########");
   logger.log("#####");
   logger.log("");
@@ -147,78 +147,88 @@ const runAesSymmetricTest = (logger, wasmModule) => {
   //
   // generate
 
-  const prng = new wasmModule.AutoSeededRandomPoolJs();
+  const prng = new wasmModule.MyAutoSeededRandomPool();
   logger.log("generate random key value");
   const keyHexJsStr = prng.getRandomHexStr(16);
   logger.log("generate random iv value");
   const ivHexJsStr = prng.getRandomHexStr(16);
-  prng.dispose();
+  prng.delete();
 
-  printImportantText(logger, "AesSymmetricCipher: initialize");
+  printImportantText(logger, "AesSymmetricCipher A: initialize");
 
-  logger.log("create the AES Symmetric Cipher");
-  const aesEncryptCipher = new wasmModule.AesSymmetricCipherJs();
-  logger.log("initialize the AES Symmetric Cipher");
-  aesEncryptCipher.initializeFromHexStr(keyHexJsStr, ivHexJsStr);
+  logger.log("create the AES Symmetric Cipher A");
+  const aesEncryptCipherA = new wasmModule.MyAesSymmetricCipher();
+  logger.log("initialize the AES Symmetric Cipher A");
+  aesEncryptCipherA.initializeFromHexStr(keyHexJsStr, ivHexJsStr);
 
-  printImportantText(logger, "AesSymmetricDecipher: initialize");
+  printImportantText(logger, "AesSymmetricCipher B: initialize");
 
-  logger.log("create the AES Symmetric Decipher");
-  const aesDecryptCipher = new wasmModule.AesSymmetricDecipherJs();
-  logger.log("initialize the AES Symmetric Decipher");
-  aesDecryptCipher.initializeFromHexStr(keyHexJsStr, ivHexJsStr);
+  logger.log("create the AES Symmetric Cipher B");
+  const aesEncryptCipherB = new wasmModule.MyAesSymmetricCipher();
+  logger.log("initialize the AES Symmetric Cipher B");
+  aesEncryptCipherB.initializeFromHexStr(keyHexJsStr, ivHexJsStr);
 
-  //
-  //
-  // encrypt
+  for (let ii = 0; ii < 3; ++ii) {
 
-  printImportantText(logger, "AesSymmetricCipher: encrypt payload");
+    printImportantText(logger, `${ii + 1}`);
 
-  const inputJsStr = "This is my plain text message....";
+    //
+    //
+    // encrypt
 
-  logger.log(`original payload:  "${inputJsStr}"`);
+    printImportantText(logger, "AesSymmetricCipher A&B: encrypt payload");
 
-  const inputJsHexStr = wasmModule.utf8ToHex(inputJsStr);
-  const encodedHexStr = aesEncryptCipher.encryptFromHexStrAsHexStr(inputJsHexStr);
+    const inputJsStr = "This is my plain text message....";
 
-  logger.log(`encrypted payload: "${encodedHexStr}"`);
+    logger.log(`original payload:  "${inputJsStr}"`);
 
-  //
-  //
-  // decrypt
+    const inputJsHexStr = wasmModule.utf8ToHex(inputJsStr);
+    const encodedHexStrA = aesEncryptCipherA.encryptFromHexStrAsHexStr(inputJsHexStr);
+    const encodedHexStrB = aesEncryptCipherB.encryptFromHexStrAsHexStr(inputJsHexStr);
 
-  printImportantText(logger, "AesSymmetricDecipher: decrypt payload");
+    logger.log(`encrypted payload A: "${encodedHexStrA}"`);
+    logger.log(`encrypted payload B: "${encodedHexStrB}"`);
 
-  const decodedHexStr = aesDecryptCipher.decryptFromHexStrAsHexStr(encodedHexStr);
-  const recovered = wasmModule.hexToUtf8(decodedHexStr)
+    //
+    //
+    // decrypt
 
-  logger.log(`decrypted payload: "${recovered}"`);
-  logger.log(`original payload:  "${inputJsStr}"`);
+    printImportantText(logger, "AesSymmetricDecipher B&B: decrypt payload");
 
-  printImportantText(logger, "Verification");
+    const decodedHexStrA = aesEncryptCipherA.decryptFromHexStrAsHexStr(encodedHexStrB);
+    const decodedHexStrB = aesEncryptCipherB.decryptFromHexStrAsHexStr(encodedHexStrA);
+    const recoveredA = wasmModule.hexToUtf8(decodedHexStrA)
+    const recoveredB = wasmModule.hexToUtf8(decodedHexStrB)
 
-  if (recovered === inputJsStr) {
-    logger.log();
-    logger.log(" => SUCCESS: ENCRYPTED PAYLOAD WAS RECOVERED!");
-    logger.log();
-  } else {
-    logger.log();
-    logger.log(" => FAILURE: ENCRYPTED PAYLOAD WAS NOT RECOVERED!");
-    logger.log();
+    logger.log(`decrypted payload A: "${recoveredA}"`);
+    logger.log(`decrypted payload B: "${recoveredA}"`);
+    logger.log(`original payload:    "${inputJsStr}"`);
+
+    printImportantText(logger, "Verification");
+
+    if (recoveredA === inputJsStr && recoveredB === inputJsStr) {
+      logger.log();
+      logger.log(" => SUCCESS: ENCRYPTED PAYLOAD WAS RECOVERED!");
+      logger.log();
+    } else {
+      logger.log();
+      logger.log(" => FAILURE: ENCRYPTED PAYLOAD WAS NOT RECOVERED!");
+      logger.log();
+    }
   }
 
   //
   //
   //
 
-  aesEncryptCipher.dispose();
-  aesDecryptCipher.dispose();
+  aesEncryptCipherA.delete();
+  aesEncryptCipherB.delete();
 
   logger.log("");
   logger.log("");
   logger.log("#####");
   logger.log("##########");
-  logger.log("########## AesSymmetricCipher / AesSymmetricDecipher test");
+  logger.log("########## AesSymmetricCipher test");
   logger.log("##########");
   logger.log("#################################################################################################");
   logger.log("#################################################################################################");

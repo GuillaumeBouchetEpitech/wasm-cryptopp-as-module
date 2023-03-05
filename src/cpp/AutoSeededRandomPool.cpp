@@ -3,23 +3,18 @@
 
 #include "helpers.hpp"
 
+#include <memory>
 
 AutoSeededRandomPool::AutoSeededRandomPool()
   : _prng(true)
 {}
 
-char* AutoSeededRandomPool::getRandomHexStrPtr(uint64_t inBufferSize)
+std::string AutoSeededRandomPool::getRandomHexStr(int inBufferSize)
 {
-  uint8_t* pTmpBuffer = new uint8_t[inBufferSize];
-  _prng.GenerateBlock(pTmpBuffer, inBufferSize);
+  auto pTmpBuffer = std::make_unique<uint8_t[]>(inBufferSize);
+  _prng.GenerateBlock(pTmpBuffer.get(), size_t(inBufferSize));
 
-  const std::string tmpHexStr = helpers::decAsHexString(pTmpBuffer, inBufferSize);
-  const std::size_t tmpSize = tmpHexStr.size();
-
-  delete[] pTmpBuffer;
-
-  char* pMessage = new char[tmpSize + 1];
-  std::memcpy(pMessage, tmpHexStr.data(), tmpSize + 1);
-  pMessage[tmpSize] = '\0';
-  return pMessage;
+  const char* pData = reinterpret_cast<const char*>(pTmpBuffer.get());
+  const std::string_view randomBlock(pData, inBufferSize);
+  return helpers::decAsHexString(randomBlock);
 }

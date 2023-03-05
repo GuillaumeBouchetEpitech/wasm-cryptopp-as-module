@@ -61,7 +61,8 @@
     "thread": "cpp",
     "cinttypes": "cpp",
     "typeinfo": "cpp",
-    "cfenv": "cpp"
+    "cfenv": "cpp",
+    "unordered_set": "cpp"
   },
   "files.exclude": {
     "/bin": true,

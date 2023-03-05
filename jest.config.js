@@ -2,7 +2,7 @@
 
 const COVERAGE_LEVEL = 50;
 
-module.exports = {
+export default {
   automock: false,
   bail: false,
   collectCoverageFrom: ['src/**/*.{js,ts}', '!**/node_modules/**'],

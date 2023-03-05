@@ -3,6 +3,7 @@
 # c++ stuff
 obj
 bin
+lib
 
 # nodejs stuff
 node_modules
@@ -13,3 +14,5 @@ coverage
 junit.xml
 test-report.json
 
+# rollupjs stuff
+.rollup.cache

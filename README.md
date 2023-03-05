@@ -5,6 +5,10 @@
 
 **`/!\ important /!\`**
 
+### Demo 1:
+http://guillaumebouchetepitech.github.io/wasm-cryptopp-as-module/samples/interactive/index.html
+
+### Demo 2:
 http://guillaumebouchetepitech.github.io/wasm-cryptopp-as-module/samples/basic/index.html
 
 **`/!\ important /!\`**

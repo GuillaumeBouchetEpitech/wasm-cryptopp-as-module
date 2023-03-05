@@ -4,15 +4,17 @@
 #include "osrng.h"
 // CryptoPP::AutoSeededRandomPool
 
+#include <string>
+
 class AutoSeededRandomPool
 {
-private:
-  CryptoPP::AutoSeededRandomPool _prng;
-
 public:
   AutoSeededRandomPool();
 
 public:
-  char* getRandomHexStrPtr(uint64_t inBufferSize);
+  std::string getRandomHexStr(int inBufferSize);
+
+private:
+  CryptoPP::AutoSeededRandomPool _prng;
 
 };

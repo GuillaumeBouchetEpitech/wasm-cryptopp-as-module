@@ -69,10 +69,11 @@ DIR_OBJ_CRYPTOPP=		$(DIR_OBJ)/cryptopp
 #### SRC
 
 
-SRC_CRYPTOPP+= \
-	$(wildcard \
-		$(DIR_CRYPTOPP_SRC)/*.cpp \
-		)
+SRC_CRYPTOPP += $(wildcard $(DIR_CRYPTOPP_SRC)/*.cpp)
+SRC_CRYPTOPP := $(filter-out $(DIR_CRYPTOPP_SRC)/bench*.cpp, $(SRC_CRYPTOPP))
+SRC_CRYPTOPP := $(filter-out $(DIR_CRYPTOPP_SRC)/datatest.cpp, $(SRC_CRYPTOPP))
+SRC_CRYPTOPP := $(filter-out $(DIR_CRYPTOPP_SRC)/test.cpp, $(SRC_CRYPTOPP))
+SRC_CRYPTOPP := $(filter-out $(DIR_CRYPTOPP_SRC)/validat*.cpp, $(SRC_CRYPTOPP))
 
 #
 
@@ -98,6 +99,7 @@ endif
 CXXFLAGS += $(BUILD_FLAG)
 CXXFLAGS += -std=c++17
 CXXFLAGS += -DCRYPTOPP_DISABLE_ASM
+CXXFLAGS += -DCRYPTOPP_DISABLE_DATA_DIR_SEARCH
 CXXFLAGS += -I$(DIR_CRYPTOPP_SRC)
 
 LDFLAGS += -msse2
@@ -137,11 +139,11 @@ RM=			rm -rf
 all:
 	@$(MAKE) --no-print-directory libcryptopp
 
-ensureFolders:
+ensure-folders:
 	@mkdir -p $(DIR_LIB)
 
 libcryptopp:
-	@$(MAKE) --no-print-directory ensureFolders
+	@$(MAKE) --no-print-directory ensure-folders
 	@$(MAKE) --no-print-directory $(OBJ_CRYPTOPP)
 	@echo ' ---> building $(LOG_INFO): "cryptopp library"'
 	@$(AR) cr $(NAME_CRYPTOPP) $(OBJ_CRYPTOPP)
@@ -165,7 +167,8 @@ clean:
 	@$(RM) $(DIR_OBJ_CRYPTOPP)
 	@echo '   -> cleaned $(LOG_INFO): cryptopp library build file(s)'
 
-fclean: clean
+fclean:
+	@$(MAKE) --no-print-directory clean
 	@echo ' -> cleaning $(LOG_INFO): cryptopp library file(s)'
 	@$(RM) $(NAME_CRYPTOPP)
 	@echo '   -> cleaned $(LOG_INFO): cryptopp library file(s)'
@@ -176,6 +179,7 @@ re:
 
 .PHONY:	\
 		all \
+		ensure-folders \
 		libcryptopp \
 		clean \
 		fclean \
