@@ -7,27 +7,37 @@ import { CrytpoppWasmModule } from "../../../_common";
 //
 //
 
-// RFC 5114, 1024-bit MODP Group with 160-bit Prime Order Subgroup
-// http://tools.ietf.org/html/rfc5114#section-2.1
+// 2.3.  2048-bit MODP Group with 256-bit Prime Order Subgroup
+// https://www.rfc-editor.org/rfc/rfc5114#section-2.3
 
 const localP = [
-  "0xB10B8F96A080E01DDE92DE5EAE5D54EC52C99FBCFB06A3C6",
-  "9A6A9DCA52D23B616073E28675A23D189838EF1E2EE652C0",
-  "13ECB4AEA906112324975C3CD49B83BFACCBDD7D90C4BD70",
-  "98488E9C219A73724EFFD6FAE5644738FAA31A4FF55BCCC0",
-  "A151AF5F0DC8B4BD45BF37DF365C1A65E68CFDA76D4DA708",
-  "DF1FB2BC2E4A4371"
+  "0x87A8E61DB4B6663CFFBBD19C651959998CEEF608660DD0F2",
+  "5D2CEED4435E3B00E00DF8F1D61957D4FAF7DF4561B2AA30",
+  "16C3D91134096FAA3BF4296D830E9A7C209E0C6497517ABD",
+  "5A8A9D306BCF67ED91F9E6725B4758C022E0B1EF4275BF7B",
+  "6C5BFC11D45F9088B941F54EB1E59BB8BC39A0BF12307F5C",
+  "4FDB70C581B23F76B63ACAE1CAA6B7902D52526735488A0E",
+  "F13C6D9A51BFA4AB3AD8347796524D8EF6A167B5A41825D9",
+  "67E144E5140564251CCACB83E6B486F6B3CA3F7971506026",
+  "C0B857F689962856DED4010ABD0BE621C3A3960A54E710C3",
+  "75F26375D7014103A4B54330C198AF126116D2276E11715F",
+  "693877FAD7EF09CADB094AE91E1A1597",
 ].join("");
 
-const localQ = "0xF518AA8781A8DF278ABA4E7D64B7CB9D49462353";
+const localQ = "0x8CF83642A709A097B447997640129DA299B1A47D1EB3750BA308B0FE64F5FBD3";
 
 const localG = [
-  "0xA4D1CBD5C3FD34126765A442EFB99905F8104DD258AC507F",
-  "D6406CFF14266D31266FEA1E5C41564B777E690F5504F213",
-  "160217B4B01B886A5E91547F9E2749F4D7FBD7D3B9A92EE1",
-  "909D0D2263F80A76A6A24C087A091F531DBF0A0169B6A28A",
-  "D662A4D18E73AFA32D779D5918D08BC8858F4DCEF97C2A24",
-  "855E6EEB22B3B2E5"
+  "0x3FB32C9B73134D0B2E77506660EDBD484CA7B18F21EF2054",
+  "07F4793A1A0BA12510DBC15077BE463FFF4FED4AAC0BB555",
+  "BE3A6C1B0C6B47B1BC3773BF7E8C6F62901228F8C28CBB18",
+  "A55AE31341000A650196F931C77A57F2DDF463E5E9EC144B",
+  "777DE62AAAB8A8628AC376D282D6ED3864E67982428EBC83",
+  "1D14348F6F2F9193B5045AF2767164E1DFC967C1FB3F2E55",
+  "A4BD1BFFE83B9C80D052B985D182EA0ADB2A3B7313D3FE14",
+  "C8484B1E052588B9B7D2BBD2DF016199ECD06E1557CD0915",
+  "B3353BBB64E0EC377FD028370DF92B52C7891428CDC67EB6",
+  "184B523D1DB246C32F63078490F00EF8D647D148D4795451",
+  "5E2327CFEF98C582664B4C0F6CC41659",
 ].join("");
 
 //
@@ -75,10 +85,15 @@ export type SecurityPayload = {
   publicKey: string;
   ivValue: string;
 };
-export const isSecurityPayload = (inValue: any): inValue is SecurityPayload => {
+export const isSecurityResponsePayload = (inValue: any): inValue is SecurityPayload => {
   return (
     typeof(inValue) === 'object' &&
-    typeof(inValue.publicKey) === 'string' &&
+    typeof(inValue.publicKey) === 'string'
+  )
+}
+export const isSecurityRequestPayload = (inValue: any): inValue is SecurityPayload => {
+  return (
+    isSecurityResponsePayload(inValue) &&
     typeof(inValue.ivValue) === 'string'
   )
 }
@@ -91,7 +106,7 @@ export class SecureClient implements ICommunication {
   private _EncryptedCommunicationState = EncryptedCommunicationState.unencrypted;
   private _callbacks: onReceiveCallback[] = [];
   private _dhClient: wasmCryptoppJs.DiffieHellmanClientJs;
-  private _symmetricCipher: wasmCryptoppJs.AesSymmetricCipherJs;
+  private _aesSymmetricCipher: wasmCryptoppJs.AesSymmetricCipherJs;
 
   private _publicKey?: string;
   private _ivValue?: string;
@@ -108,7 +123,7 @@ export class SecureClient implements ICommunication {
     const wasmModule = CrytpoppWasmModule.get();
 
     this._dhClient = new wasmModule.DiffieHellmanClientJs();
-    this._symmetricCipher = new wasmModule.AesSymmetricCipherJs();
+    this._aesSymmetricCipher = new wasmModule.AesSymmetricCipherJs();
 
     this._communication.onReceive((inMsg: string) => {
       this._processReceivedMessage(inMsg);
@@ -117,7 +132,7 @@ export class SecureClient implements ICommunication {
 
   delete() {
     this._dhClient.delete();
-    this._symmetricCipher.delete();
+    this._aesSymmetricCipher.delete();
     this._wasDeleted = true;
   }
 
@@ -148,7 +163,7 @@ export class SecureClient implements ICommunication {
       {
         this._log("decrypting message");
 
-        const recovered = this._symmetricCipher.decryptFromHexStrAsHexStr(jsonMsg.payload);
+        const recovered = this._aesSymmetricCipher.decryptFromHexStrAsHexStr(jsonMsg.payload);
 
         if (this._EncryptedCommunicationState === EncryptedCommunicationState.ready) {
           this._log("connection now confirmed secure");
@@ -174,34 +189,24 @@ export class SecureClient implements ICommunication {
 
         const jsonPayload = JSON.parse(jsonMsg.payload);
 
-        if (!isSecurityPayload(jsonPayload))
-          throw new Error("received message security payload unrecognized");
+        if (!isSecurityRequestPayload(jsonPayload))
+          throw new Error("received message security request payload unrecognized");
 
         this._ivValue = jsonPayload.ivValue;
 
-        this._dhClient.generateKeys(localP, localQ, localG);
+        this._generateDiffieHellmanKeys();
 
-        this._log("generating public/private keys");
-
-        this._publicKey = this._dhClient.getPublicKeyAsHexStr();
-        this._dhClient.computeSharedSecretFromHexStr(jsonPayload.publicKey);
-
-        this._log("computing the shared secret with the received public key");
-
-        this._sharedSecret = this._dhClient.getSharedSecretAsHexStr();
-
-        this._log("initializing aes symmetric cipher with computed shared secret");
-
-        this._symmetricCipher.initializeFromHexStr(
-          this._sharedSecret.slice(0, 32),
-          this._ivValue,
-        );
+        this._initializeAesSymmetricCipher(jsonPayload.publicKey);
 
         this._log("sending public key");
 
         this._EncryptedCommunicationState = EncryptedCommunicationState.ready;
 
-        this._communication.send(JSON.stringify({ type: MessageTypes.SecurityResponse, payload: this._publicKey }));
+        const payload = JSON.stringify({
+          publicKey: this._publicKey,
+        });
+
+        this._communication.send(JSON.stringify({ type: MessageTypes.SecurityResponse, payload }));
 
         break;
       }
@@ -214,15 +219,12 @@ export class SecureClient implements ICommunication {
 
         this._log("computing the shared secret with the received public key");
 
-        this._dhClient.computeSharedSecretFromHexStr(jsonMsg.payload);
-        this._sharedSecret = this._dhClient.getSharedSecretAsHexStr();
+        const jsonPayload = JSON.parse(jsonMsg.payload);
 
-        this._log("initializing aes symmetric cipher with computed shared secret");
+        if (!isSecurityResponsePayload(jsonPayload))
+          throw new Error("received message security response payload unrecognized");
 
-        this._symmetricCipher.initializeFromHexStr(
-          this._sharedSecret.slice(0, 32),
-          this._ivValue!,
-        );
+        this._initializeAesSymmetricCipher(jsonPayload.publicKey);
 
         this._log("connection now confirmed secure");
 
@@ -236,16 +238,49 @@ export class SecureClient implements ICommunication {
 
   }
 
+  private _generateDiffieHellmanKeys() {
+
+    this._log("------------------------------------");
+    this._log("Diffie Hellman Key Exchange");
+    this._log("generating public/private keys");
+    this._log("2048-bit MODP Group with 256-bit Prime Order Subgroup");
+
+    this._dhClient.generateKeys(localP, localQ, localG);
+    this._publicKey = this._dhClient.getPublicKeyAsHexStr();
+
+    this._log("generated public/private keys");
+    this._log("------------------------------------");
+  }
+
+  private _initializeAesSymmetricCipher(publicKey: string) {
+
+    this._dhClient.computeSharedSecretFromHexStr(publicKey);
+    this._sharedSecret = this._dhClient.getSharedSecretAsHexStr();
+
+    this._log("------------------------------------");
+    this._log("AES Symmetric Cipher");
+    this._log("initializing");
+    this._log("256bits key from computed shared secret");
+
+    this._aesSymmetricCipher.initializeFromHexStr(
+      this._sharedSecret.slice(0, 64), // 64hex -> 32bytes ->  256bits key
+      this._ivValue!,
+    );
+
+    this._log("initialized");
+    this._log("------------------------------------");
+  }
+
   makeSecure() {
 
     if (this._wasDeleted)
       throw new Error("was deleted");
 
+    this._log("now securing the connection");
+
     this._EncryptedCommunicationState = EncryptedCommunicationState.initiated;
 
-    this._dhClient.generateKeys(localP, localQ, localG);
-    this._publicKey = this._dhClient.getPublicKeyAsHexStr();
-
+    this._generateDiffieHellmanKeys();
 
     const wasmModule = CrytpoppWasmModule.get();
     const prng = new wasmModule.AutoSeededRandomPoolJs();
@@ -283,7 +318,7 @@ export class SecureClient implements ICommunication {
       const wasmModule = CrytpoppWasmModule.get();
       const textAshex = wasmModule.utf8ToHex(inText);
 
-      const encrypted = this._symmetricCipher.encryptFromHexStrAsHexStr(textAshex);
+      const encrypted = this._aesSymmetricCipher.encryptFromHexStrAsHexStr(textAshex);
 
       this._communication.send(JSON.stringify({ type: MessageTypes.EncryptedMessage, payload: encrypted }));
     }

@@ -16,7 +16,7 @@ export const runAesSymmetricTest = (logger: Logger) => {
 
   const prng = new wasmModule.AutoSeededRandomPoolJs();
   logger.alignedLog('center', "generate random key value");
-  const keyHexStr = prng.getRandomHexStr(16);
+  const keyHexStr = prng.getRandomHexStr(32);
   logger.alignedLog('center', "generate random iv value");
   const ivHexStr = prng.getRandomHexStr(16);
   prng.delete();

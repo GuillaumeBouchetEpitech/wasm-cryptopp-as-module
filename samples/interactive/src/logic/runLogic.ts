@@ -1,5 +1,5 @@
 
-import { SecureClient, isMessage, isSecurityPayload, onReceiveCallback, ICommunication, MessageTypes } from "./SecureClient";
+import { SecureClient, isMessage, isSecurityRequestPayload, isSecurityResponsePayload, onReceiveCallback, ICommunication, MessageTypes } from "./SecureClient";
 
 import { Logger, printHexadecimalStrings } from "../../../_common";
 
@@ -46,12 +46,17 @@ export const runLogic = (logger: Logger) => {
 
             const jsonSecMsg = JSON.parse(jsonMsg.payload);
 
-            if (isSecurityPayload(jsonSecMsg)) {
+            if (isSecurityRequestPayload(jsonSecMsg)) {
 
               logger.alignedLog(inAlign, `payload.publicKey:`);
               printHexadecimalStrings(logger, jsonSecMsg.publicKey, 64, inAlign)
               logger.alignedLog(inAlign, `payload.ivValue:`);
               printHexadecimalStrings(logger, jsonSecMsg.ivValue, 64, inAlign)
+
+            } else if (isSecurityResponsePayload(jsonSecMsg)) {
+
+              logger.alignedLog(inAlign, `payload.publicKey:`);
+              printHexadecimalStrings(logger, jsonSecMsg.publicKey, 64, inAlign)
 
             } else {
               logger.alignedLog(inAlign, `payload:`);
