@@ -26,14 +26,14 @@ void AesSymmetricCipher::initializeFromHexStr(
 
   if (keyDecStr.size() < CryptoPP::AES::MIN_KEYLENGTH)
   {
-    std::string_view msg = "iv too small";
+    std::string_view msg = "key too small";
     std::cerr << msg << std::endl;
     throw std::invalid_argument(msg.data());
   }
 
   if (keyDecStr.size() > CryptoPP::AES::MAX_KEYLENGTH)
   {
-    std::string_view msg = "iv too big";
+    std::string_view msg = "key too big";
     std::cerr << msg << std::endl;
     throw std::invalid_argument(msg.data());
   }
