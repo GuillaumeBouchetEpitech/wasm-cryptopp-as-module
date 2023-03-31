@@ -67,14 +67,6 @@ echo "building wasm module"
 
 make build_platform="web-wasm" build_mode="release" all -j4
 
-# copy to the samples folder for manual test
-cp -rf ./build/* ./samples/basic/cryptopp/
-cp -rf ./build/* ./samples/interactive/cryptopp/
-
-ls -lh ./build/
-ls -lh ./samples/basic/cryptopp/
-ls -lh ./samples/interactive/cryptopp/
-
 #
 #
 #
