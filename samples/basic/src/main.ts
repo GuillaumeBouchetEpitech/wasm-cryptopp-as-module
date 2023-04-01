@@ -23,10 +23,14 @@ window.onload = async () => {
 
   logger.logCenter(" loading wasmCryptoppJs wasm script");
 
+  const loadStartTime = Date.now();
+
   await CrytpoppWasmModule.load();
 
+  const loadEndTime = Date.now();
+  const elapsedTime = (loadEndTime - loadStartTime);
 
-  logger.logCenter("wasmCryptoppJs wasm module loaded");
+  logger.logCenter(`wasmCryptoppJs wasm module loaded ${elapsedTime}ms`);
 
   //
   //

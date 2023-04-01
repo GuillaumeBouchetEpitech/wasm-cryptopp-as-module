@@ -12,6 +12,8 @@ const findOrFailHtmlElement = <T extends Element>(inId: string): T => {
 
 window.onload = async () => {
 
+  const testStartTime = Date.now();
+
   const loggerOutput = findOrFailHtmlElement<HTMLBaseElement>("#loggerOutput");
   const logger = new Logger(loggerOutput);
 
@@ -19,23 +21,28 @@ window.onload = async () => {
 
   logger.logCenter(logger.makeColor([255,0,0], "\n\nSTART\n\n"));
 
-  logger.logCenter("CrytpoppWasmModule: loading");
+  logger.logCenter(" loading wasmCryptoppJs wasm script");
+
+  const loadStartTime = Date.now();
 
   await CrytpoppWasmModule.load();
 
-  logger.logCenter("CrytpoppWasmModule: loaded");
+  const loadEndTime = Date.now();
 
-
-  //
-  //
-  //
-
-  runLogic(logger);
+  logger.logCenter(`wasmCryptoppJs wasm module loaded (${loadEndTime - loadStartTime}ms)`);
 
   //
   //
   //
 
-  logger.logCenter(logger.makeColor([255,0,0], "\n\nSTOP\n\n"));
+  await runLogic(logger);
+
+  //
+  //
+  //
+
+
+  const testEndTime = Date.now();
+  logger.logCenter(logger.makeColor([255,0,0], `\n\nSTOP (${testEndTime - testStartTime}ms)\n\n`));
 
 };

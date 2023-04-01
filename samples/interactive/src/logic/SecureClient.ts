@@ -104,7 +104,7 @@ export class SecureClient implements ICommunication {
 
   private readonly _communication: ICommunication;
   private _EncryptedCommunicationState = EncryptedCommunicationState.unencrypted;
-  private _callbacks: onReceiveCallback[] = [];
+  private _onReceiveCallbacks: onReceiveCallback[] = [];
   private _dhClient: wasmCryptoppJs.DiffieHellmanClientJs;
   private _aesSymmetricCipher: wasmCryptoppJs.AesSymmetricCipherJs;
 
@@ -136,11 +136,6 @@ export class SecureClient implements ICommunication {
     this._wasDeleted = true;
   }
 
-  private _log(inLogMsg: string) {
-    if (this._onLogging)
-      this._onLogging(inLogMsg);
-  }
-
   private _processReceivedMessage(inText: string) {
 
     if (this._wasDeleted)
@@ -156,14 +151,20 @@ export class SecureClient implements ICommunication {
     switch (jsonMsg.type) {
       case MessageTypes.PlainMessage:
       {
-        this._callbacks.forEach((callback) => callback(jsonMsg.payload));
+        this._onReceiveCallbacks.forEach((callback) => callback(jsonMsg.payload));
         break;
       }
       case MessageTypes.EncryptedMessage:
       {
-        this._log("decrypting message");
+        this._log("decrypting");
+        const startTime = Date.now();
 
         const recovered = this._aesSymmetricCipher.decryptFromHexStrAsHexStr(jsonMsg.payload);
+        const wasmModule = CrytpoppWasmModule.get();
+        const plainText = wasmModule.hexToUtf8(recovered);
+
+        const endTime = Date.now();
+        this._log(`decrypted (${endTime - startTime}ms)`);
 
         if (this._EncryptedCommunicationState === EncryptedCommunicationState.ready) {
           this._log("connection now confirmed secure");
@@ -173,12 +174,7 @@ export class SecureClient implements ICommunication {
           throw new Error("was expecting to be in a secure state");
         }
 
-        const wasmModule = CrytpoppWasmModule.get();
-        const plainText = wasmModule.hexToUtf8(recovered);
-
-        this._log("message decrypted");
-
-        this._callbacks.forEach((callback) => callback(plainText));
+        this._onReceiveCallbacks.forEach((callback) => callback(plainText));
         break;
       }
       case MessageTypes.SecurityRequest:
@@ -238,39 +234,6 @@ export class SecureClient implements ICommunication {
 
   }
 
-  private _generateDiffieHellmanKeys() {
-
-    this._log("------------------------------------");
-    this._log("Diffie Hellman Key Exchange");
-    this._log("generating public/private keys");
-    this._log("2048-bit MODP Group with 256-bit Prime Order Subgroup");
-
-    this._dhClient.generateKeys(localP, localQ, localG);
-    this._publicKey = this._dhClient.getPublicKeyAsHexStr();
-
-    this._log("generated public/private keys");
-    this._log("------------------------------------");
-  }
-
-  private _initializeAesSymmetricCipher(publicKey: string) {
-
-    this._dhClient.computeSharedSecretFromHexStr(publicKey);
-    this._sharedSecret = this._dhClient.getSharedSecretAsHexStr();
-
-    this._log("------------------------------------");
-    this._log("AES Symmetric Cipher");
-    this._log("initializing");
-    this._log("256bits key from computed shared secret");
-
-    this._aesSymmetricCipher.initializeFromHexStr(
-      this._sharedSecret.slice(0, 64), // 64hex -> 32bytes ->  256bits key
-      this._ivValue!,
-    );
-
-    this._log("initialized");
-    this._log("------------------------------------");
-  }
-
   makeSecure() {
 
     if (this._wasDeleted)
@@ -315,10 +278,15 @@ export class SecureClient implements ICommunication {
       this._log(`[encrypted] sending a message:`);
       this._log(`[encrypted] "${inText}"`);
 
+      this._log(`[encrypted] encrypting`);
+      const startTime = Date.now();
+
       const wasmModule = CrytpoppWasmModule.get();
       const textAshex = wasmModule.utf8ToHex(inText);
-
       const encrypted = this._aesSymmetricCipher.encryptFromHexStrAsHexStr(textAshex);
+
+      const endTime = Date.now();
+      this._log(`[encrypted] encrypted (${endTime - startTime}ms)`);
 
       this._communication.send(JSON.stringify({ type: MessageTypes.EncryptedMessage, payload: encrypted }));
     }
@@ -330,7 +298,7 @@ export class SecureClient implements ICommunication {
     if (this._wasDeleted)
       throw new Error("was deleted");
 
-    this._callbacks.push(inCallback);
+    this._onReceiveCallbacks.push(inCallback);
   }
 
   get EncryptedCommunicationState() {
@@ -339,6 +307,48 @@ export class SecureClient implements ICommunication {
       throw new Error("was deleted");
 
     return this._EncryptedCommunicationState;
+  }
+
+  private _log(inLogMsg: string) {
+    if (this._onLogging)
+      this._onLogging(inLogMsg);
+  }
+
+  private _generateDiffieHellmanKeys() {
+
+    this._log("------------------------------------");
+    this._log("Diffie Hellman Key Exchange");
+    this._log("generating public/private keys");
+    this._log("2048-bit MODP Group with 256-bit Prime Order Subgroup");
+    const startTime = Date.now();
+
+    this._dhClient.generateKeys(localP, localQ, localG);
+    this._publicKey = this._dhClient.getPublicKeyAsHexStr();
+
+    const endTime = Date.now();
+    this._log(`generated public/private keys (${endTime - startTime}ms)`);
+    this._log("------------------------------------");
+  }
+
+  private _initializeAesSymmetricCipher(publicKey: string) {
+
+    this._dhClient.computeSharedSecretFromHexStr(publicKey);
+    this._sharedSecret = this._dhClient.getSharedSecretAsHexStr();
+
+    this._log("------------------------------------");
+    this._log("AES Symmetric Cipher");
+    this._log("initializing");
+    this._log("256bits key from computed shared secret");
+    const startTime = Date.now();
+
+    this._aesSymmetricCipher.initializeFromHexStr(
+      this._sharedSecret.slice(0, 64), // 64hex -> 32bytes ->  256bits key
+      this._ivValue!,
+    );
+
+    const endTime = Date.now();
+    this._log(`initialized (${endTime - startTime}ms)`);
+    this._log("------------------------------------");
   }
 
 };

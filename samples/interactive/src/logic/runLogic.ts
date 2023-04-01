@@ -1,15 +1,16 @@
 
-import { SecureClient, isMessage, isSecurityRequestPayload, isSecurityResponsePayload, onReceiveCallback, ICommunication, MessageTypes } from "./SecureClient";
+import { SecureClient } from "./SecureClient";
 
-import { Logger, printHexadecimalStrings } from "../../../_common";
+import { FakeWebSocket } from "./internals/FakeWebSocket";
 
-export const runLogic = (logger: Logger) => {
+import { Logger } from "../../../_common";
+
+export const runLogic = async (logger: Logger) => {
 
   logger.logCenter(
     logger.makeColor([128,128,0],
       logger.makeSize(30,
         logger.makeBorder("Secure Connection Test"))));
-
 
   const clientA_str = logger.makeColor([128 + 64,128,128], "Client A");
   const clientB_str = logger.makeColor([128,128,128 + 64], "Client B");
@@ -18,133 +19,8 @@ export const runLogic = (logger: Logger) => {
   //
   //
 
-  const _logPayload = (inAlign: "left" | "center" | "right", inText: string) => {
-
-    const jsonMsg = JSON.parse(inText);
-
-    if (isMessage(jsonMsg)) {
-
-      if (jsonMsg.type === MessageTypes.PlainMessage) {
-        logger.alignedLog(inAlign, logger.makeColor([128+64,64,64], `/!\\ UNENCRYPTED MESSAGE /!\\`));
-      } else if (jsonMsg.type === MessageTypes.EncryptedMessage) {
-        logger.alignedLog(inAlign, logger.makeColor([64,128+64,64], `(OK) ENCRYPTED MESSAGE (OK)`));
-      } else if (jsonMsg.type === MessageTypes.SecurityRequest || jsonMsg.type === MessageTypes.SecurityResponse) {
-        logger.alignedLog(inAlign, logger.makeColor([64,128+64,64], `(OK) NO COMPROMISING INFORMATION SHARED (OK)`));
-      }
-
-      logger.alignedLog(inAlign, `type:`);
-      logger.alignedLog(inAlign, logger.makeColor([128+64,128+64,64], `"${jsonMsg.type}"`));
-
-      switch (jsonMsg.type) {
-        case MessageTypes.PlainMessage:
-          logger.alignedLog(inAlign, `payload:`);
-          logger.alignedLog(inAlign, logger.makeColor([128+64,64,64], logger.makeSize(25, `"${jsonMsg.payload}"`)));
-          break;
-        default: {
-
-          try {
-
-            const jsonSecMsg = JSON.parse(jsonMsg.payload);
-
-            if (isSecurityRequestPayload(jsonSecMsg)) {
-
-              logger.alignedLog(inAlign, `payload.publicKey:`);
-              printHexadecimalStrings(logger, jsonSecMsg.publicKey, 64, inAlign)
-              logger.alignedLog(inAlign, `payload.ivValue:`);
-              printHexadecimalStrings(logger, jsonSecMsg.ivValue, 64, inAlign)
-
-            } else if (isSecurityResponsePayload(jsonSecMsg)) {
-
-              logger.alignedLog(inAlign, `payload.publicKey:`);
-              printHexadecimalStrings(logger, jsonSecMsg.publicKey, 64, inAlign)
-
-            } else {
-              logger.alignedLog(inAlign, `payload:`);
-              printHexadecimalStrings(logger, jsonMsg.payload, 64, inAlign)
-            }
-
-          } catch {
-            logger.alignedLog(inAlign, `payload:`);
-            printHexadecimalStrings(logger, jsonMsg.payload, 64, inAlign)
-          }
-
-          break;
-        }
-      }
-
-      if (jsonMsg.type === MessageTypes.PlainMessage) {
-        logger.alignedLog(inAlign, logger.makeColor([128+64,64,64], `/!\\ UNENCRYPTED MESSAGE /!\\`));
-      } else if (jsonMsg.type === MessageTypes.EncryptedMessage) {
-        logger.alignedLog(inAlign, logger.makeColor([64,128+64,64], `(OK) ENCRYPTED MESSAGE (OK)`));
-      } else if (jsonMsg.type === MessageTypes.SecurityRequest || jsonMsg.type === MessageTypes.SecurityResponse) {
-        logger.alignedLog(inAlign, logger.makeColor([64,128+64,64], `(OK) NO COMPROMISING INFORMATION SHARED (OK)`));
-      }
-
-    } else {
-      logger.alignedLog(inAlign, `"${inText}"`);
-    }
-  };
-
-  const allSendMessagesA: string[] = [];
-  const allOnReceiveCallbacksA: onReceiveCallback[] = [
-    (inText) => {
-      logger.alignedLog("left", `SecureClient ${clientA_str} received a message`);
-      // _logPayload("left", inText);
-      logger.alignedLog("left", "\n");
-    },
-  ];
-  const communicationA: ICommunication = {
-    send: (inText: string) => {
-      logger.alignedLog("left", `SecureClient ${clientA_str} sent a message`);
-      // _logPayload("left", inText);
-      logger.alignedLog("left", "\n");
-
-
-      logger.alignedLog('center', `${clientA_str} -----> ${clientB_str}`);
-      logger.alignedLog("center", "\n");
-      _logPayload('center', inText);
-      logger.alignedLog("center", "\n");
-      logger.alignedLog('center', `${clientA_str} -----> ${clientB_str}`);
-      logger.alignedLog("center", "\n");
-
-
-      allSendMessagesA.push(inText);
-    },
-    onReceive: (inCallback: onReceiveCallback) => {
-      allOnReceiveCallbacksA.push(inCallback);
-    },
-  };
-
-  //
-
-  const allSendMessagesB: string[] = [];
-  const allOnReceiveCallbacksB: onReceiveCallback[] = [
-    (inText) => {
-      logger.alignedLog("right", `SecureClient ${clientB_str} received a message`);
-      // _logPayload("right", inText);
-      logger.alignedLog("right", "\n");
-    },
-  ];
-  const communicationB: ICommunication = {
-    send: (inText: string) => {
-      logger.alignedLog("right", `SecureClient ${clientB_str} sent a message`);
-      // _logPayload("right", inText);
-      logger.alignedLog("right", "\n");
-
-      logger.alignedLog('center', `${clientA_str} <----- ${clientB_str}`);
-      logger.alignedLog("center", "\n");
-      _logPayload('center', inText);
-      logger.alignedLog("center", "\n");
-      logger.alignedLog('center', `${clientA_str} <----- ${clientB_str}`);
-      logger.alignedLog("center", "\n");
-
-
-      allSendMessagesB.push(inText);
-    },
-    onReceive: (inCallback: onReceiveCallback) => {
-      allOnReceiveCallbacksB.push(inCallback);
-    },
-  };
+  const fakeWebSocketA = new FakeWebSocket(logger, 'left', clientA_str, clientB_str);
+  const fakeWebSocketB = new FakeWebSocket(logger, 'right', clientB_str, clientA_str);
 
   //
   //
@@ -153,7 +29,7 @@ export const runLogic = (logger: Logger) => {
   logger.logCenter(logger.makeBorder(`initialize`));
 
   logger.logLeft(`${clientA_str} created`);
-  const clientA = new SecureClient(communicationA, (inLogMsg) => logger.logLeft(inLogMsg));
+  const clientA = new SecureClient(fakeWebSocketA, (inLogMsg) => logger.logLeft(inLogMsg));
   clientA.onReceive((inText) => {
     logger.alignedLog("left", `${clientA_str} received:`);
     logger.alignedLog("left", logger.makeColor([64,128+64,64], logger.makeSize(25, `"${inText}"`)));
@@ -161,7 +37,7 @@ export const runLogic = (logger: Logger) => {
   });
 
   logger.logRight(`${clientB_str} created`);
-  const clientB = new SecureClient(communicationB, (inLogMsg) => logger.logRight(inLogMsg));
+  const clientB = new SecureClient(fakeWebSocketB, (inLogMsg) => logger.logRight(inLogMsg));
   clientB.onReceive((inText) => {
     logger.alignedLog("right", `${clientB_str} received:`);
     // logger.alignedLog("right", logger.makeColor([64,128+64,64], `"${inText}"`));
@@ -180,10 +56,7 @@ export const runLogic = (logger: Logger) => {
   logger.alignedLog("left", logger.makeColor([64,128+64,64], logger.makeSize(25, `"${messageToSend}"`)));
   logger.log(`\n`);
   clientA.send(messageToSend);
-  allSendMessagesA.forEach((inText) => {
-    allOnReceiveCallbacksB.forEach((callback) => callback(inText));
-  });
-  allSendMessagesA.length = 0;
+  fakeWebSocketA.pipeMessages(fakeWebSocketB);
 
   logger.logCenter(logger.makeBorder(`[unencrypted] Client B send to Client A`));
 
@@ -192,10 +65,7 @@ export const runLogic = (logger: Logger) => {
   logger.alignedLog("right", logger.makeColor([64,128+64,64], logger.makeSize(25, `"${messageToReply}"`)));
   logger.log(`\n`);
   clientB.send(messageToReply);
-  allSendMessagesB.forEach((inText) => {
-    allOnReceiveCallbacksA.forEach((callback) => callback(inText));
-  });
-  allSendMessagesB.length = 0;
+  fakeWebSocketB.pipeMessages(fakeWebSocketA);
 
   //
   //
@@ -204,20 +74,16 @@ export const runLogic = (logger: Logger) => {
 
   clientA.makeSecure();
 
-  while (allSendMessagesA.length !== 0 || allSendMessagesB.length !== 0) {
-
-    allSendMessagesA.forEach((inText) => {
-      allOnReceiveCallbacksB.forEach((callback) => callback(inText));
-    });
-    allSendMessagesA.length = 0;
-
-    allSendMessagesB.forEach((inText) => {
-      allOnReceiveCallbacksA.forEach((callback) => callback(inText));
-    });
-    allSendMessagesB.length = 0;
+  while (
+    fakeWebSocketA.hasMessageToSend() ||
+    fakeWebSocketB.hasMessageToSend()
+  ) {
+    fakeWebSocketA.pipeMessages(fakeWebSocketB);
+    fakeWebSocketB.pipeMessages(fakeWebSocketA);
   }
 
   logger.logCenter(logger.makeBorder(`Client B sent a reply for encryption to Client B`));
+
   logger.logCenter(logger.makeBorder(`Both Client A and Client B can now encrypt/decrypt each other messages`));
 
   //
@@ -229,9 +95,7 @@ export const runLogic = (logger: Logger) => {
   logger.alignedLog("left", logger.makeColor([64,128+64,64], logger.makeSize(25, `"${newMessageToSend}"`)));
   logger.log(`\n`);
   clientA.send(newMessageToSend);
-  allSendMessagesA.forEach((inText) => {
-    allOnReceiveCallbacksB.forEach((callback) => callback(inText));
-  });
+  fakeWebSocketA.pipeMessages(fakeWebSocketB);
 
   logger.logCenter(logger.makeBorder(`[encrypted] Client B send to Client A`));
 
@@ -240,9 +104,7 @@ export const runLogic = (logger: Logger) => {
   logger.alignedLog("right", logger.makeColor([64,128+64,64], logger.makeSize(25, `"${newMessageToReply}"`)));
   logger.log(`\n`);
   clientB.send(newMessageToReply);
-  allSendMessagesB.forEach((inText) => {
-    allOnReceiveCallbacksA.forEach((callback) => callback(inText));
-  });
+  fakeWebSocketB.pipeMessages(fakeWebSocketA);
 
   //
   //
@@ -250,7 +112,6 @@ export const runLogic = (logger: Logger) => {
 
   clientA.delete();
   clientB.delete();
-
 
   logger.logCenter(
     logger.makeColor([128,128,0],
