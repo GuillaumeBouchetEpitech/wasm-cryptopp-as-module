@@ -1,7 +1,39 @@
 
-import { isMessage, isSecurityRequestPayload, isSecurityResponsePayload, MessageTypes } from "../SecureClient";
+import { isMessage, isSecurityRequestPayload, isSecurityResponsePayload, Message, MessageTypes } from "../SecureClient";
 
 import { Logger, printHexadecimalStrings } from "../../../../_common";
+
+const k_plainMessagetext = [
+  "/!\\",
+  "UNENCRYPTED MESSAGE",
+  "ANYONE LISTENING CAN SEE IT",
+  "/!\\",
+].join("\n");
+
+const k_encryptedMessagetext = [
+  "(OK)",
+  "ENCRYPTED MESSAGE",
+  "GOOD LUCK TO ANYONE LISTENING",
+  "(OK)",
+].join("\n");
+
+const k_securityMessagetext = [
+  "(OK)",
+  "NO COMPROMISING INFORMATION SHARED",
+  "GOOD LUCK TO ANYONE LISTENING",
+  "(OK)",
+].join("\n");
+
+const logSeparator = (logger: Logger, inAlign: "left" | "center" | "right", jsonMsg: Message) => {
+
+  if (jsonMsg.type === MessageTypes.PlainMessage) {
+    logger.alignedLog(inAlign, logger.makeColor([128,64,64], k_plainMessagetext));
+  } else if (jsonMsg.type === MessageTypes.EncryptedMessage) {
+    logger.alignedLog(inAlign, logger.makeColor([64,128,64], k_encryptedMessagetext));
+  } else if (jsonMsg.type === MessageTypes.SecurityRequest || jsonMsg.type === MessageTypes.SecurityResponse) {
+    logger.alignedLog(inAlign, logger.makeColor([64,128,64], k_securityMessagetext));
+  }
+};
 
 export const logMessagePayload = (logger: Logger, inAlign: "left" | "center" | "right", inText: string) => {
 
@@ -9,13 +41,7 @@ export const logMessagePayload = (logger: Logger, inAlign: "left" | "center" | "
 
   if (isMessage(jsonMsg)) {
 
-    if (jsonMsg.type === MessageTypes.PlainMessage) {
-      logger.alignedLog(inAlign, logger.makeColor([128+64,64,64], `/!\\ UNENCRYPTED MESSAGE /!\\`));
-    } else if (jsonMsg.type === MessageTypes.EncryptedMessage) {
-      logger.alignedLog(inAlign, logger.makeColor([64,128+64,64], `(OK) ENCRYPTED MESSAGE (OK)`));
-    } else if (jsonMsg.type === MessageTypes.SecurityRequest || jsonMsg.type === MessageTypes.SecurityResponse) {
-      logger.alignedLog(inAlign, logger.makeColor([64,128+64,64], `(OK) NO COMPROMISING INFORMATION SHARED (OK)`));
-    }
+    logSeparator(logger, inAlign, jsonMsg);
 
     logger.alignedLog(inAlign, `type:`);
     logger.alignedLog(inAlign, logger.makeColor([128+64,128+64,64], `"${jsonMsg.type}"`));
@@ -57,13 +83,7 @@ export const logMessagePayload = (logger: Logger, inAlign: "left" | "center" | "
       }
     }
 
-    if (jsonMsg.type === MessageTypes.PlainMessage) {
-      logger.alignedLog(inAlign, logger.makeColor([128+64,64,64], `/!\\ UNENCRYPTED MESSAGE /!\\`));
-    } else if (jsonMsg.type === MessageTypes.EncryptedMessage) {
-      logger.alignedLog(inAlign, logger.makeColor([64,128+64,64], `(OK) ENCRYPTED MESSAGE (OK)`));
-    } else if (jsonMsg.type === MessageTypes.SecurityRequest || jsonMsg.type === MessageTypes.SecurityResponse) {
-      logger.alignedLog(inAlign, logger.makeColor([64,128+64,64], `(OK) NO COMPROMISING INFORMATION SHARED (OK)`));
-    }
+    logSeparator(logger, inAlign, jsonMsg);
 
   } else {
     logger.alignedLog(inAlign, `"${inText}"`);

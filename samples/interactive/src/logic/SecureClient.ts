@@ -67,13 +67,6 @@ export const isMessage = (inValue: any): inValue is Message => {
   )
 }
 
-export type onReceiveCallback = (inText: string) => void;
-
-export interface ICommunication {
-  send(inText: string): void;
-  onReceive(inCallback: onReceiveCallback): void;
-};
-
 export enum EncryptedCommunicationState {
   unencrypted,
   initiated,
@@ -97,6 +90,13 @@ export const isSecurityRequestPayload = (inValue: any): inValue is SecurityPaylo
     typeof(inValue.ivValue) === 'string'
   )
 }
+
+export type onReceiveCallback = (inText: string) => void;
+
+export interface ICommunication {
+  send(inText: string): void;
+  onReceive(inCallback: onReceiveCallback): void;
+};
 
 export class SecureClient implements ICommunication {
 

@@ -11,6 +11,7 @@ export class FakeWebSocket implements ICommunication {
   private _logTextAlign: 'left' | 'right';
   private _myName: string;
   private _otherName: string;
+  private _transitionStr: string;
 
   private _allSentMessages: string[] = [];
 
@@ -21,6 +22,7 @@ export class FakeWebSocket implements ICommunication {
     this._logTextAlign = inLogTextAlign;
     this._myName = inMyName;
     this._otherName = inOtherName;
+    this._transitionStr = inLogTextAlign === "right" ? "<-----" : "----->";
   }
 
   send(inText: string): void {
@@ -30,11 +32,11 @@ export class FakeWebSocket implements ICommunication {
     this._logger.alignedLog(this._logTextAlign, `fake websocket "${this._myName}" sent a message\n`);
 
 
-    this._logger.alignedLog('center', `"${this._myName}" -----> "${this._otherName}"`);
-    this._logger.alignedLog("center", "\n");
+    this._logger.alignedLog('center', `"${this._myName}" ${this._transitionStr} "${this._otherName}"`);
+    // this._logger.alignedLog("center", "\n");
     logMessagePayload(this._logger, 'center', inText);
-    this._logger.alignedLog("center", "\n");
-    this._logger.alignedLog('center', `"${this._myName}" -----> "${this._otherName}"`);
+    // this._logger.alignedLog("center", "\n");
+    this._logger.alignedLog('center', `"${this._myName}" ${this._transitionStr} "${this._otherName}"`);
     this._logger.alignedLog("center", "\n");
 
     this._allSentMessages.push(inText);
