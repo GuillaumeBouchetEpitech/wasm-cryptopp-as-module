@@ -12,7 +12,7 @@ echo ""
 echo "#################################################"
 echo "#                                               #"
 echo "# IF THIS SCRIPT FAIL -> TRY THOSE TWO COMMANDS #"
-echo "# -> 'chmod u+x ./sh_everything.sh'              #"
+echo "# -> 'chmod u+x ./sh_everything.sh'             #"
 echo "# -> './sh_everything.sh'                       #"
 echo "#                                               #"
 echo "#################################################"
@@ -27,7 +27,7 @@ echo ""
 if [ -z "${EMSDK}" ]; then
   echo "the env var 'EMSDK' is missing"
   echo " => check the readme if you want to install emscripten"
-  echo " => it emscripten is laready installed, you may just need to run '. ./emsdk_env.sh' in this terminal"
+  echo " => it emscripten is already installed, you may just need to run '. ./emsdk_env.sh' in this terminal"
   exit 1;
 fi
 

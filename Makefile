@@ -38,13 +38,13 @@ DIR_MODULE=	./build
 
 ifeq ($(build_platform),native)
 
-DIR_OBJ=		./obj/native
+DIR_OBJ=		  ./obj/native
 
-NAME_LIB=		$(DIR_LIB)/lib-wrapper-cryptopp.a
+NAME_LIB=		  $(DIR_LIB)/lib-wrapper-cryptopp.a
 
 else ifeq ($(build_platform),web-wasm)
 
-DIR_OBJ=				./obj/web-wasm
+DIR_OBJ=			./obj/web-wasm
 
 NAME_MODULE=	$(DIR_MODULE)/wasm-cryptopp.js
 
@@ -93,20 +93,20 @@ OBJ=	$(patsubst %.cpp, $(DIR_OBJ)/%.o, $(SRC))
 
 ifeq ($(build_platform),native)
 
-CXX=g++
-AR=ar
+CXX=  g++
+AR=   ar
 
 else ifeq ($(build_platform),web-wasm)
 
-CXX=						em++
-AR=							emar
+CXX=  em++
+AR=   emar
 
 endif
 
 #
 #
 
-RM=							rm -rf
+RM=   rm -rf
 
 #
 #
@@ -173,13 +173,11 @@ endif
 
 ifeq ($(build_platform),native)
 
-all:
-	@$(MAKE) --no-print-directory native-lib
+all: native-lib
 
 else ifeq ($(build_platform),web-wasm)
 
-all:
-	@$(MAKE) --no-print-directory wasm-module
+all: wasm-module
 
 endif
 
@@ -194,19 +192,15 @@ ensure-folders:
 
 ifeq ($(build_platform),native)
 
-native-lib:
+native-lib: ensure-folders $(OBJ)
 	@echo ' ---> building $(LOG_INFO): "native lib"'
-	@$(MAKE) --no-print-directory ensure-folders
-	@$(MAKE) --no-print-directory $(OBJ)
 	@$(AR) cr $(NAME_LIB) $(OBJ)
 	@echo '   --> built $(LOG_INFO): "native lib"'
 
 else ifeq ($(build_platform),web-wasm)
 
-wasm-module:
+wasm-module: ensure-folders $(OBJ)
 	@echo ' ---> building $(LOG_INFO): "wasm module"'
-	@$(MAKE) --no-print-directory ensure-folders
-	@$(MAKE) --no-print-directory $(OBJ)
 	@$(CXX) $(CXXFLAGS) $(OBJ) -o $(NAME_MODULE) $(LDFLAGS)
 	@echo '   --> built $(LOG_INFO): "wasm module"'
 
@@ -237,15 +231,12 @@ clean:
 	@$(RM) $(DIR_OBJ)
 	@echo '   -> cleaned $(LOG_INFO): application build file(s)'
 
-fclean:
-	@$(MAKE) --no-print-directory clean
+fclean:  clean
 	@echo ' -> cleaning $(LOG_INFO): application file(s)'
 	@$(RM) $(DIR_MODULE)
 	@echo '   -> cleaned $(LOG_INFO): application file(s)'
 
-re:
-	@$(MAKE) --no-print-directory fclean
-	@$(MAKE) --no-print-directory all
+re: fclean all
 
 .PHONY: \
 	all \
