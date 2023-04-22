@@ -2,6 +2,7 @@
 #include "../DiffieHellmanClient.hpp"
 #include "../AutoSeededRandomPool.hpp"
 #include "../AesSymmetricCipher.hpp"
+#include "../RSAFeatures.hpp"
 
 #include "getExceptionMessage.hpp"
 
@@ -31,6 +32,27 @@ EMSCRIPTEN_BINDINGS(my_namespace) {
     .function("getPublicKeyAsHexStr", &DiffieHellmanClient::getPublicKeyAsHexStr)
     .function("getSharedSecretAsHexStr", &DiffieHellmanClient::getSharedSecretAsHexStr)
     ;
+
+
+
+  emscripten::class_<RSAPrivateKey>("RSAPrivateKeyJs")
+    .constructor()
+    .function("generateRandomWithKeySize", &RSAPrivateKey::generateRandomWithKeySize)
+    .function("loadFromPemString", &RSAPrivateKey::loadFromPemString)
+    .function("getAsPemString", &RSAPrivateKey::getAsPemString)
+    .function("signFromHexStrToHexStr", &RSAPrivateKey::signFromHexStrToHexStr)
+    ;
+
+
+
+  emscripten::class_<RSAPublicKey>("RSAPublicKeyJs")
+    .constructor()
+    .function("setFromPrivateKey", &RSAPublicKey::setFromPrivateKey)
+    .function("loadFromPemString", &RSAPublicKey::loadFromPemString)
+    .function("getAsPemString", &RSAPublicKey::getAsPemString)
+    .function("verifyFromHexStrToHexStr", &RSAPublicKey::verifyFromHexStrToHexStr)
+    ;
+
 
 
   emscripten::function("getExceptionMessage", &getExceptionMessage);

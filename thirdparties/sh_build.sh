@@ -8,9 +8,10 @@ func_do_clean() {
     echo ""
     echo "=> cleaning"
     echo "  mode=${mode}"
+    echo "  platform=${platform}"
     echo ""
 
-    make build_mode="${mode}" fclean
+    make build_mode="${mode}" build_platform="${platform}" fclean
 }
 
 func_do_build() {
@@ -21,9 +22,10 @@ func_do_build() {
     echo ""
     echo "=> building"
     echo "  mode=${mode}"
+    echo "  platform=${platform}"
     echo ""
 
-    make build_mode="${mode}" all -j3
+    make build_mode="${mode}" build_platform="${platform}" all -j3
 }
 
 func_try_to_clean() {
@@ -31,8 +33,9 @@ func_try_to_clean() {
     case $must_clean in
     yes)
         mode=$1
+        platform=$2
 
-        func_do_clean $mode
+        func_do_clean $mode $platform
         ;;
     esac
 }
@@ -45,6 +48,15 @@ func_set_build_flags() {
         ;;
     release)
         ARG_SEL_MODE="release"
+        ;;
+    esac
+
+    case $selected_platform in
+    native)
+        ARG_SEL_PLATFORM="native"
+        ;;
+    web-wasm)
+        ARG_SEL_PLATFORM="web-wasm"
         ;;
     esac
 }

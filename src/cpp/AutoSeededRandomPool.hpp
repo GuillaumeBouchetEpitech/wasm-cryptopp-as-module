@@ -6,8 +6,14 @@
 
 #include <string>
 
+// forward declaration
+class RSAPrivateKey;
+
 class AutoSeededRandomPool
 {
+
+  friend RSAPrivateKey;
+
 public:
   AutoSeededRandomPool();
 

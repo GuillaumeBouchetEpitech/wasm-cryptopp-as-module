@@ -12,6 +12,9 @@ NAME_LIB_WRAPPER=		$(DIR_LIB_WRAPPER)/lib/lib-wrapper-cryptopp.a
 DIR_LIB_CRYPTOPP=		$(DIR_LIB_WRAPPER)/thirdparties/dependencies/cryptopp
 NAME_LIB_CRYPTOPP=	$(DIR_LIB_WRAPPER)/thirdparties/lib/native/lib-cryptopp.a
 
+DIR_LIB_CRYPTOPP_PEM=		$(DIR_LIB_WRAPPER)/thirdparties/dependencies/cryptopp-pem
+NAME_LIB_CRYPTOPP_PEM=	$(DIR_LIB_WRAPPER)/thirdparties/lib/native/lib-cryptopp-pem.a
+
 
 SRC+= 		$(wildcard $(DIR_SRC)/*.cpp)
 
@@ -30,10 +33,12 @@ CXXFLAGS += -std=c++17
 CXXFLAGS += -I$(DIR_SRC)
 CXXFLAGS += -I$(DIR_LIB_WRAPPER)/src/cpp
 CXXFLAGS += -I$(DIR_LIB_CRYPTOPP)
+CXXFLAGS += -I$(DIR_LIB_CRYPTOPP_PEM)
 CXXFLAGS += -no-pie
 
 LDFLAGS += $(BUILD_FLAG)
 LDFLAGS += $(NAME_LIB_WRAPPER)
+LDFLAGS += $(NAME_LIB_CRYPTOPP_PEM)
 LDFLAGS += $(NAME_LIB_CRYPTOPP)
 
 LIBRARIES += gtest_main

@@ -33,18 +33,10 @@ http://guillaumebouchetepitech.github.io/wasm-cryptopp-as-module/samples/basic/i
 # Dependencies
 
 ## Dependency: Emscripten 3.1.26
-```bash
-git clone https://github.com/emscripten-core/emsdk.git
 
-cd emsdk
+[Github Link](https://github.com/emscripten-core/emsdk)
 
-./emsdk install 3.1.26
-./emsdk activate --embedded 3.1.26
-
-. ./emsdk_env.sh
-
-em++ --clear-cache
-```
+This dependency will be downloaded and built with the `Build Everything` method below
 
 ## Dependency: cryptopp 8.2.0
 
@@ -59,14 +51,23 @@ This dependency will be downloaded and built with the `Build Everything` method 
 ```bash
 chmod +x ./sh_everything.sh
 ./sh_everything.sh
-#- this will:
-#  - check if emscripten is available
-#  - [if not found] will download libcrypto++
-#  - [if not build] compile libcrypto++ (wasm byte code library)
-#  - build the wasm module
-#    - [if not build] compile the C++ wrapper code
-#      - and expose what's specified in `./definitions/wasm-crypto.idl`
-#      - and inject what's in `./src/js/post.js`
 ```
+
+## Build Everything (details)
+
+This will:
+- handle the c++-to-wasm compiler
+  - **[if not found]** will download emsdk (locally)
+  - will initialize emscripten compiler (includes setting up the env)
+- handle thirdparty libraries
+  - **[if not found]** will download libraries (locally)
+    - `libcrypto++`
+    - `libcrypto++-pem`
+  - **[if not build]** compile libraries (wasm byte code library)
+    - `libcrypto++`
+    - `libcrypto++-pem`
+- generate the wasm module
+  - **[if not build]** compile the C++ wrapper code
+    - and inject what's in `./src/js/post.js`
 
 # Thanks for watching!

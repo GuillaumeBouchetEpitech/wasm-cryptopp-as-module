@@ -32,13 +32,15 @@ ifeq ($(build_platform),native)
 
 DIR_LIB=		./lib/native
 
-NAME_CRYPTOPP=	$(DIR_LIB)/lib-cryptopp.a
+NAME_CRYPTOPP=			$(DIR_LIB)/lib-cryptopp.a
+NAME_CRYPTOPP_PEM=	$(DIR_LIB)/lib-cryptopp-pem.a
 
 else ifeq ($(build_platform),web-wasm)
 
 DIR_LIB=		./lib/web-wasm
 
-NAME_CRYPTOPP=	$(DIR_LIB)/lib-cryptopp.bc
+NAME_CRYPTOPP=			$(DIR_LIB)/lib-cryptopp.bc
+NAME_CRYPTOPP_PEM=	$(DIR_LIB)/lib-cryptopp-pem.bc
 
 endif
 
@@ -48,6 +50,7 @@ endif
 
 DIR_DEPENDENCIES=		./dependencies
 DIR_CRYPTOPP_SRC=		$(DIR_DEPENDENCIES)/cryptopp
+DIR_CRYPTOPP_PEM_SRC=		$(DIR_DEPENDENCIES)/cryptopp-pem
 
 #### /DIRS
 
@@ -64,6 +67,7 @@ DIR_OBJ=	./obj/web-wasm
 endif
 
 DIR_OBJ_CRYPTOPP=		$(DIR_OBJ)/cryptopp
+DIR_OBJ_CRYPTOPP_PEM=		$(DIR_OBJ)/cryptopp-pem
 
 
 #### SRC
@@ -75,9 +79,13 @@ SRC_CRYPTOPP := $(filter-out $(DIR_CRYPTOPP_SRC)/datatest.cpp, $(SRC_CRYPTOPP))
 SRC_CRYPTOPP := $(filter-out $(DIR_CRYPTOPP_SRC)/test.cpp, $(SRC_CRYPTOPP))
 SRC_CRYPTOPP := $(filter-out $(DIR_CRYPTOPP_SRC)/validat*.cpp, $(SRC_CRYPTOPP))
 
+SRC_CRYPTOPP_PEM += $(wildcard $(DIR_CRYPTOPP_PEM_SRC)/*.cpp)
+
 #
 
 OBJ_CRYPTOPP=	$(patsubst %.cpp, $(DIR_OBJ_CRYPTOPP)/%.o, $(SRC_CRYPTOPP))
+
+OBJ_CRYPTOPP_PEM=	$(patsubst %.cpp, $(DIR_OBJ_CRYPTOPP_PEM)/%.o, $(SRC_CRYPTOPP_PEM))
 
 #
 
@@ -98,9 +106,13 @@ endif
 
 CXXFLAGS += $(BUILD_FLAG)
 CXXFLAGS += -std=c++17
+CXXFLAGS += -w
 CXXFLAGS += -DCRYPTOPP_DISABLE_ASM
 CXXFLAGS += -DCRYPTOPP_DISABLE_DATA_DIR_SEARCH
 CXXFLAGS += -I$(DIR_CRYPTOPP_SRC)
+
+CXXFLAGS_PEM += $(CXXFLAGS)
+CXXFLAGS_PEM += -I$(DIR_CRYPTOPP_PEM_SRC)
 
 LDFLAGS += -msse2
 LDFLAGS += -msse3
@@ -136,18 +148,20 @@ RM=			rm -rf
 #
 ## RULE(S)
 
-all:
-	@$(MAKE) --no-print-directory libcryptopp
+all:  libcryptopp libcryptopp-pem
 
 ensure-folders:
 	@mkdir -p $(DIR_LIB)
 
-libcryptopp:
-	@$(MAKE) --no-print-directory ensure-folders
-	@$(MAKE) --no-print-directory $(OBJ_CRYPTOPP)
+libcryptopp: ensure-folders $(OBJ_CRYPTOPP)
 	@echo ' ---> building $(LOG_INFO): "cryptopp library"'
 	@$(AR) cr $(NAME_CRYPTOPP) $(OBJ_CRYPTOPP)
 	@echo '   --> built $(LOG_INFO): "cryptopp library"'
+
+libcryptopp-pem: ensure-folders $(OBJ_CRYPTOPP_PEM)
+	@echo ' ---> building $(LOG_INFO): "cryptopp-pem library"'
+	@$(AR) cr $(NAME_CRYPTOPP_PEM) $(OBJ_CRYPTOPP_PEM)
+	@echo '   --> built $(LOG_INFO): "cryptopp-pem library"'
 
 #
 
@@ -160,27 +174,36 @@ $(DIR_OBJ_CRYPTOPP)/%.o: %.cpp
 	@echo ' --> processing $(LOG_INFO):' $<
 	@$(CXX) $(CXXFLAGS) $< -c -o $@ $(LDFLAGS)
 
+$(DIR_OBJ_CRYPTOPP_PEM)/%.o: %.cpp
+	@mkdir -p $(dir $@)
+	@echo ' --> processing $(LOG_INFO):' $<
+	@$(CXX) $(CXXFLAGS_PEM) $< -c -o $@ $(LDFLAGS)
+
 #
 
 clean:
 	@echo ' -> cleaning $(LOG_INFO): cryptopp library build file(s)'
 	@$(RM) $(DIR_OBJ_CRYPTOPP)
 	@echo '   -> cleaned $(LOG_INFO): cryptopp library build file(s)'
+	@echo ' -> cleaning $(LOG_INFO): cryptopp-pem library build file(s)'
+	@$(RM) $(DIR_OBJ_CRYPTOPP_PEM)
+	@echo '   -> cleaned $(LOG_INFO): cryptopp-pem library build file(s)'
 
-fclean:
-	@$(MAKE) --no-print-directory clean
+fclean:  clean
 	@echo ' -> cleaning $(LOG_INFO): cryptopp library file(s)'
 	@$(RM) $(NAME_CRYPTOPP)
 	@echo '   -> cleaned $(LOG_INFO): cryptopp library file(s)'
+	@echo ' -> cleaning $(LOG_INFO): cryptopp-pem library file(s)'
+	@$(RM) $(NAME_CRYPTOPP_PEM)
+	@echo '   -> cleaned $(LOG_INFO): cryptopp-pem library file(s)'
 
-re:
-	@$(MAKE) --no-print-directory fclean
-	@$(MAKE) --no-print-directory all
+re: fclean  all
 
 .PHONY:	\
 		all \
 		ensure-folders \
 		libcryptopp \
+		libcryptopp-pem \
 		clean \
 		fclean \
 		re

@@ -43,6 +43,32 @@ declare module wasmCryptoppJs {
   //
   //
 
+  class RSAPrivateKeyJs {
+    constructor();
+    delete(): void;
+    generateRandomWithKeySize(rng: AutoSeededRandomPoolJs, keySize: number): void;
+    loadFromPemString(inPemString: string): string;
+    getAsPemString(): string;
+    signFromHexStrToHexStr(rng: AutoSeededRandomPoolJs, inHexStr: string): string;
+  };
+
+  //
+  //
+  //
+
+  class RSAPublicKeyJs {
+    constructor();
+    delete(): void;
+    setFromPrivateKey(inPrivateKey: RSAPrivateKey): void;
+    loadFromPemString(inPemString: string): string;
+    getAsPemString(): string;
+    verifyFromHexStrToHexStr(inHexStr: string): string;
+  };
+
+  //
+  //
+  //
+
   const utf8ToHex: (inJsStr: string) => string;
   const hexToUtf8: (inJsStr: string) => string;
 

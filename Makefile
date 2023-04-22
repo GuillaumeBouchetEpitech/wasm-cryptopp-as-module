@@ -58,12 +58,15 @@ endif
 #
 #
 
-DIR_LIB_CRYPTOPP=		./thirdparties/dependencies/cryptopp
+DIR_LIB_CRYPTOPP=			./thirdparties/dependencies/cryptopp
+DIR_LIB_CRYPTOPP_PEM=	./thirdparties/dependencies/cryptopp-pem
 
 ifeq ($(build_platform),native)
-NAME_LIB_CRYPTOPP=	./thirdparties/lib/native/lib-cryptopp.a
+NAME_LIB_CRYPTOPP=			./thirdparties/lib/native/lib-cryptopp.a
+NAME_LIB_CRYPTOPP_PEM=	./thirdparties/lib/native/lib-cryptopp-pem.a
 else ifeq ($(build_platform),web-wasm)
-NAME_LIB_CRYPTOPP=	./thirdparties/lib/web-wasm/lib-cryptopp.bc
+NAME_LIB_CRYPTOPP=			./thirdparties/lib/web-wasm/lib-cryptopp.bc
+NAME_LIB_CRYPTOPP_PEM=	./thirdparties/lib/web-wasm/lib-cryptopp-pem.bc
 endif
 
 #
@@ -125,9 +128,11 @@ CXXFLAGS += -std=c++17
 CXXFLAGS += -Wall -W -Wextra -Wunused
 CXXFLAGS += -I$(DIR_SRC)
 CXXFLAGS += -I$(DIR_LIB_CRYPTOPP)
+CXXFLAGS += -I$(DIR_LIB_CRYPTOPP_PEM)
 
 LDFLAGS += $(BUILD_FLAG)
 LDFLAGS += $(NAME_LIB_CRYPTOPP)
+LDFLAGS += $(NAME_LIB_CRYPTOPP_PEM)
 
 
 ifeq ($(build_platform),native)
@@ -137,7 +142,7 @@ else ifeq ($(build_platform),web-wasm)
 CXXFLAGS += -lembind
 
 
-LDFLAGS += -s TOTAL_MEMORY=8Mb # 16Kb, 256Mb, etc.
+LDFLAGS += -s TOTAL_MEMORY=16Mb # 16Kb, 256Mb, etc.
 LDFLAGS += -s WASM=1
 LDFLAGS += -s BINARYEN_IGNORE_IMPLICIT_TRAPS=1
 LDFLAGS += -s DISABLE_DEPRECATED_FIND_EVENT_TARGET_BEHAVIOR=0
