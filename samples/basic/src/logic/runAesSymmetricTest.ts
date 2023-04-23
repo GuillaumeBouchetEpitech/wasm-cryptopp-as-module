@@ -1,7 +1,9 @@
 
 import { Logger, CrytpoppWasmModule, printHexadecimalStrings } from "../../../_common";
 
-export const runAesSymmetricTest = (logger: Logger) => {
+import { profileScope } from "./internals";
+
+export const runAesSymmetricTest = async (logger: Logger) => {
 
   const wasmModule = CrytpoppWasmModule.get();
 
@@ -25,13 +27,23 @@ export const runAesSymmetricTest = (logger: Logger) => {
   logger.alignedLog('left', "create the AES Symmetric Cipher A");
   const aesEncryptCipherA = new wasmModule.AesSymmetricCipherJs();
   logger.alignedLog('left', "initialize the AES Symmetric Cipher A");
-  aesEncryptCipherA.initializeFromHexStr(keyHexStr, ivHexStr);
+  logger.alignedLog('left', "initializing");
+  await profileScope(() => {
+    aesEncryptCipherA.initializeFromHexStr(keyHexStr, ivHexStr);
+  }, (elapsed) => {
+    logger.alignedLog('left', `initialized (${elapsed}ms)`);
+  });
 
   logger.logCenter(logger.makeBorder("AesSymmetricCipher B: initialize"));
   logger.alignedLog('right', "create the AES Symmetric Cipher B");
   const aesEncryptCipherB = new wasmModule.AesSymmetricCipherJs();
   logger.alignedLog('right', "initialize the AES Symmetric Cipher B");
-  aesEncryptCipherB.initializeFromHexStr(keyHexStr, ivHexStr);
+  logger.alignedLog('right', "initializing");
+  await profileScope(() => {
+    aesEncryptCipherB.initializeFromHexStr(keyHexStr, ivHexStr);
+  }, (elapsed) => {
+    logger.alignedLog('right', `initialized (${elapsed}ms)`);
+  });
 
   //
   //
@@ -44,7 +56,13 @@ export const runAesSymmetricTest = (logger: Logger) => {
   logger.alignedLog('left', `original payload:  "${logger.makeColor([64,128+64,64], inputStr)}"`);
 
   const inputHexStr = wasmModule.utf8ToHex(inputStr);
-  const encodedHexStr = aesEncryptCipherA.encryptFromHexStrAsHexStr(inputHexStr);
+
+  logger.alignedLog('left', `encrypting`);
+  const encodedHexStr = await profileScope(() => {
+    return aesEncryptCipherA.encryptFromHexStrAsHexStr(inputHexStr);
+  }, (elapsed) => {
+    logger.alignedLog('left', `encrypted (${elapsed}ms)`);
+  });
 
   logger.alignedLog('left', `encrypted payload:`);
   printHexadecimalStrings(logger, encodedHexStr, 32, 'left');
@@ -58,7 +76,13 @@ export const runAesSymmetricTest = (logger: Logger) => {
   logger.alignedLog('right', `encrypted payload:`);
   printHexadecimalStrings(logger, encodedHexStr, 32, 'right');
 
-  const decodedHexStr = aesEncryptCipherB.decryptFromHexStrAsHexStr(encodedHexStr);
+  logger.alignedLog('right', `decrypting`);
+  const decodedHexStr = await profileScope(() => {
+    return aesEncryptCipherA.decryptFromHexStrAsHexStr(encodedHexStr);
+  }, (elapsed) => {
+    logger.alignedLog('right', `decrypted (${elapsed}ms)`);
+  });
+
   const recoveredStr = wasmModule.hexToUtf8(decodedHexStr)
 
   logger.alignedLog('right', `decrypted payload: "${logger.makeColor([128,128,255], recoveredStr)}"`);

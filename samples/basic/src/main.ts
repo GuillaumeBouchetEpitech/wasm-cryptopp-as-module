@@ -1,7 +1,7 @@
 
 import { Logger, CrytpoppWasmModule } from "../../_common";
 
-import { runDiffieHellmanClientTest, runAesSymmetricTest } from "./logic";
+import { runDiffieHellmanClientTest, runAesSymmetricTest, runRSAFeaturesTest } from "./logic";
 
 const findOrFailHtmlElement = <T extends Element>(inId: string): T => {
   const htmlElement = document.querySelector<T>(inId);
@@ -36,13 +36,19 @@ window.onload = async () => {
   //
   //
 
-  runAesSymmetricTest(logger);
+  await runAesSymmetricTest(logger);
 
   //
   //
   //
 
-  runDiffieHellmanClientTest(logger);
+  await runDiffieHellmanClientTest(logger);
+
+  //
+  //
+  //
+
+  await runRSAFeaturesTest(logger);
 
   //
   //

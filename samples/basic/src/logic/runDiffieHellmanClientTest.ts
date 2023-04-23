@@ -1,7 +1,9 @@
 
 import { Logger, CrytpoppWasmModule, printHexadecimalStrings } from "../../../_common";
 
-export const runDiffieHellmanClientTest = (logger: Logger) => {
+import { profileScope } from "./internals";
+
+export const runDiffieHellmanClientTest = async (logger: Logger) => {
 
   const wasmModule = CrytpoppWasmModule.get();
 
@@ -60,7 +62,12 @@ export const runDiffieHellmanClientTest = (logger: Logger) => {
   logger.logLeft(`${clientA_str} created`);
   const clientA = new wasmModule.DiffieHellmanClientJs();
   logger.logLeft(`${clientA_str} generate keys`);
-  clientA.generateKeys(localP, localQ, localG);
+  logger.alignedLog('left', "generating");
+  await profileScope(() => {
+    clientA.generateKeys(localP, localQ, localG);
+  }, (elapsed) => {
+    logger.alignedLog('left', `generated (${elapsed}ms)`);
+  });
   logger.logLeft(`${clientA_str} provide public key`);
   const pubKeyHexStr_A = clientA.getPublicKeyAsHexStr();
   // logger.log(`${clientA_str} public key as hexadecimal value:`);
@@ -72,7 +79,12 @@ export const runDiffieHellmanClientTest = (logger: Logger) => {
   logger.logRight(`${clientB_str} created`);
   const clientB = new wasmModule.DiffieHellmanClientJs();
   logger.logRight(`${clientB_str} generate keys`);
-  clientB.generateKeys(localP, localQ, localG);
+  logger.alignedLog('right', "generating");
+  await profileScope(() => {
+    clientB.generateKeys(localP, localQ, localG);
+  }, (elapsed) => {
+    logger.alignedLog('right', `generated (${elapsed}ms)`);
+  });
   logger.logRight(`${clientB_str} provide public key`);
   const pubKeyHexStr_B = clientB.getPublicKeyAsHexStr();
   // logger.log(`${clientB_str} public key as hexadecimal value:`);
@@ -85,16 +97,28 @@ export const runDiffieHellmanClientTest = (logger: Logger) => {
 
   logger.logCenter(logger.makeBorder(`${clientA_str} compute shared secret (with ${clientB_str} public key)`));
 
-  clientA.computeSharedSecretFromHexStr(pubKeyHexStr_B);
-  const sharedSecretHexStr_A = clientA.getSharedSecretAsHexStr();
+  logger.alignedLog('left', "computing");
+  const sharedSecretHexStr_A = await profileScope(() => {
+    clientA.computeSharedSecretFromHexStr(pubKeyHexStr_B);
+    return clientA.getSharedSecretAsHexStr();
+  }, (elapsed) => {
+    logger.alignedLog('left', `computed (${elapsed}ms)`);
+  });
+
   logger.logLeft(`${clientA_str} computed shared secret as hexadecimal value:`);
   printHexadecimalStrings(logger, sharedSecretHexStr_A, 64, 'left');
   logger.log();
 
   logger.logCenter(logger.makeBorder(`${clientB_str} compute shared secret (with ${clientA_str} public key)`));
 
-  clientB.computeSharedSecretFromHexStr(pubKeyHexStr_A);
-  const sharedSecretHexStr_B = clientB.getSharedSecretAsHexStr();
+  logger.alignedLog('right', "computing");
+  const sharedSecretHexStr_B = await profileScope(() => {
+    clientB.computeSharedSecretFromHexStr(pubKeyHexStr_A);
+    return clientB.getSharedSecretAsHexStr();
+  }, (elapsed) => {
+    logger.alignedLog('right', `computed (${elapsed}ms)`);
+  });
+
   logger.logRight(`${clientB_str} computed shared secret as hexadecimal value:`);
   printHexadecimalStrings(logger, sharedSecretHexStr_B, 64, 'right');
   logger.log();

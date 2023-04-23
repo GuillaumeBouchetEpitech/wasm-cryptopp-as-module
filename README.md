@@ -3,20 +3,40 @@
 
 ## Description
 
-Features:
-* Browser cryptography capabilities are limited, this fix that
-* Types are provided for TypeScript
-  * also provide a limited JavaScript autocompletion
-* unit tests
-  * native C++ rely on GoogleTest
-  * node TypeScript rely on jest
-* works in a Node.js context
-  * even if the crypto module might be enough.
-* the currently exposed Crypto++ capabilities are:
-  * AES Symmetric Cipher
-  * Diffie Hellman Client
-  * Auto Seeded Random Pool
-* It should be possible to expose most Crypto++ capabilities.
+Browser cryptography capabilities are limited, this project attempt to fix that.
+
+Definition file is provided for TypeScript (or limited JavaScript autocompletion).
+
+Works in a Node.js context (if you don't lie the crypto module...?).
+
+Unit tested:
+* C++ code rely on GoogleTest
+* TypeScript code rely on jest
+
+It should be possible to expose most Crypto++ capabilities.
+
+---
+
+### Current Capabilities
+
+#### AES Symmetric Cipher:
+  * encrypt
+  * decrypt
+
+#### Diffie Hellman Client:
+  * generateKeys
+  * computeSharedSecret
+
+#### Auto Seeded Random Pool:
+  * secure random N random bytes (as hexadecimal string)
+
+### RSA features:
+  * generate random private keys
+  * PEM import/export of private/public keys
+  * sign with private keys
+  * verify with public keys
+
+---
 
 # Online Demo Link(s)
 

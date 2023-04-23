@@ -60,6 +60,67 @@ describe("RSAFeatures.spec", () => {
 
     });
 
+    test('can get and load PEM, then sign and verify', async () => {
+
+      //
+      // SETUP
+      //
+
+      const prng = new wasmModule.AutoSeededRandomPoolJs();
+
+      const primarySet = {
+        privateKey: new wasmModule.RSAPrivateKeyJs(),
+        publicKey: new wasmModule.RSAPublicKeyJs(),
+      };
+
+      const secondarySet = {
+        privateKey: new wasmModule.RSAPrivateKeyJs(),
+        publicKey: new wasmModule.RSAPublicKeyJs(),
+      };
+
+      //
+      // INITIALIZE
+      //
+
+      primarySet.privateKey.generateRandomWithKeySize(prng, 3072);
+      primarySet.publicKey.setFromPrivateKey(primarySet.privateKey);
+
+      secondarySet.privateKey.loadFromPemString(primarySet.privateKey.getAsPemString());
+      secondarySet.publicKey.loadFromPemString(primarySet.publicKey.getAsPemString());
+
+      //
+      // SIGN
+      //
+
+      const payloadStr = "Hello from JavaScript!";
+      const payloadHexStr = wasmModule!.utf8ToHex(payloadStr);
+
+      const signedHexStr =  primarySet.privateKey.signFromHexStrToHexStr(prng, payloadHexStr);
+
+      expect(signedHexStr).not.toEqual(payloadStr);
+      expect(signedHexStr.length).toBeGreaterThan(payloadStr.length);
+
+      //
+      // VERIFY
+      //
+
+      const verifiedHexStr = secondarySet.publicKey.verifyFromHexStrToHexStr(signedHexStr);
+      const verifiedMessage = wasmModule.hexToUtf8(verifiedHexStr);
+
+      expect(verifiedMessage).toEqual(payloadStr);
+
+      //
+      // DEALLOCATE
+      //
+
+      secondarySet.publicKey.delete();
+      secondarySet.privateKey.delete();
+      primarySet.publicKey.delete();
+      primarySet.privateKey.delete();
+      prng.delete();
+
+    });
+
   });
 
   describe("failure", () => {
