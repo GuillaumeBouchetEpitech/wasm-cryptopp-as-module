@@ -21,11 +21,11 @@ TEST(RSAFeatures_test, success_test) {
 
   const std::string message = "Some plain text payload";
 
-  const std::string hexMessage = helpers::decAsHexString(message);
+  const std::string hexMessage = helpers::byteBuffer_to_hexStr(message);
   const std::string signedHexStr = privateKey.signFromHexStrToHexStr(prng, hexMessage);
 
   const std::string verifiedHexStr = publicKey.verifyFromHexStrToHexStr(signedHexStr);
-  const std::string verifiedMessage = helpers::hexAsDecString(verifiedHexStr);
+  const std::string verifiedMessage = helpers::hexStr_to_byteBuffer(verifiedHexStr);
 
   ASSERT_EQ(message, verifiedMessage);
 }
@@ -48,6 +48,10 @@ TEST(RSAFeatures_test, cipher_decrypt_garbage) {
 
   //
   //
+
+  // const std::string verifiedHexStr = publicKey.verifyFromHexStrToHexStr(garbageStr);
+
+  // ASSERT_EQ(verifiedHexStr.size(), 0);
 
   bool errorHappened = false;
 

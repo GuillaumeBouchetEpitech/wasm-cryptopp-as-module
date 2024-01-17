@@ -1,5 +1,6 @@
 
-import { Logger, CrytpoppWasmModule } from "../../_common";
+// import { Logger, CrytpoppWasmModule } from "../../_common";
+import { Logger, CrytpoppWasmModule } from "@local-framework";
 
 import { runLogic } from "./logic";
 

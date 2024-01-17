@@ -16,5 +16,5 @@ std::string AutoSeededRandomPool::getRandomHexStr(int inBufferSize)
 
   const char* pData = reinterpret_cast<const char*>(pTmpBuffer.get());
   const std::string_view randomBlock(pData, inBufferSize);
-  return helpers::decAsHexString(randomBlock);
+  return helpers::byteBuffer_to_hexStr(randomBlock);
 }

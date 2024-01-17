@@ -3,7 +3,7 @@ import { onReceiveCallback, ICommunication } from "../SecureClient";
 
 import { logMessagePayload } from "./logMessagePayload";
 
-import { Logger } from "../../../../_common";
+import { Logger } from "@local-framework";
 
 export class FakeWebSocket implements ICommunication {
 

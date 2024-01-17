@@ -1,5 +1,6 @@
 
-import { Logger, CrytpoppWasmModule, printHexadecimalStrings } from "../../../_common";
+// import { Logger, CrytpoppWasmModule, printHexadecimalStrings } from "../../../_common";
+import { Logger, CrytpoppWasmModule, printHexadecimalStrings } from "@local-framework";
 
 import { profileScope } from "./internals";
 

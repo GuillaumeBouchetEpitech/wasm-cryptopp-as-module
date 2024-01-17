@@ -1,6 +1,6 @@
 
 export * from "./asyncSleep"
-export * from "./scriptLoadingUtility"
-export * from "./Logger"
-export * from "./CrytpoppWasmModule"
-export * from "./printHexadecimalStrings"
+export * from "./browser/scriptLoadingUtility"
+export * from "./browser/Logger"
+export * from "./browser/CrytpoppWasmModule"
+export * from "./browser/printHexadecimalStrings"

@@ -1,7 +1,8 @@
 
 import { isMessage, isSecurityRequestPayload, isSecurityResponsePayload, Message, MessageTypes } from "../SecureClient";
 
-import { Logger, printHexadecimalStrings } from "../../../../_common";
+// import { Logger, printHexadecimalStrings } from "../../../../_common";
+import { Logger, printHexadecimalStrings } from "@local-framework";
 
 const k_plainMessagetext = [
   "/!\\",

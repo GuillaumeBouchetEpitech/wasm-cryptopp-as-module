@@ -1,7 +1,8 @@
 
 import wasmCryptoppJs from "wasmCryptoppJs";
 
-import { CrytpoppWasmModule } from "../../../_common";
+// import { CrytpoppWasmModule, Logger, printHexadecimalStrings } from "../../../_common";
+import { Logger, CrytpoppWasmModule, printHexadecimalStrings } from "@local-framework";
 
 //
 //
@@ -112,13 +113,14 @@ export class SecureClient implements ICommunication {
   private _ivValue?: string;
   private _sharedSecret?: string;
 
-  private _onLogging: (inLogMsg: string) => void;
+  private _logger: Logger;
+  private _logTextAlign: 'left' | 'right';
 
-
-  constructor(inCommunication: ICommunication, inOnLogging: (inLogMsg: string) => void) {
+  constructor(inCommunication: ICommunication, inLogger: Logger, inLogTextAlign: 'left' | 'right', ) {
 
     this._communication = inCommunication;
-    this._onLogging = inOnLogging;
+    this._logger = inLogger;
+    this._logTextAlign = inLogTextAlign;
 
     const wasmModule = CrytpoppWasmModule.get();
 
@@ -146,7 +148,7 @@ export class SecureClient implements ICommunication {
     if (!isMessage(jsonMsg))
       throw new Error("received message structure unrecognized");
 
-    this._log(`received message, type: "${jsonMsg.type}"`);
+    this._logger.alignedLog(this._logTextAlign, `received message, type: "${jsonMsg.type}"`);
 
     switch (jsonMsg.type) {
       case MessageTypes.PlainMessage:
@@ -156,7 +158,7 @@ export class SecureClient implements ICommunication {
       }
       case MessageTypes.EncryptedMessage:
       {
-        this._log("decrypting");
+        this._logger.alignedLog(this._logTextAlign, "decrypting");
         const startTime = Date.now();
 
         const recovered = this._aesSymmetricCipher.decryptFromHexStrAsHexStr(jsonMsg.payload);
@@ -164,10 +166,10 @@ export class SecureClient implements ICommunication {
         const plainText = wasmModule.hexToUtf8(recovered);
 
         const endTime = Date.now();
-        this._log(`decrypted (${endTime - startTime}ms)`);
+        this._logger.alignedLog(this._logTextAlign, `decrypted (${endTime - startTime}ms)`);
 
         if (this._EncryptedCommunicationState === EncryptedCommunicationState.ready) {
-          this._log("connection now confirmed secure");
+          this._logger.alignedLog(this._logTextAlign, "connection now confirmed secure");
           this._EncryptedCommunicationState = EncryptedCommunicationState.confirmed;
         }
         else if (this._EncryptedCommunicationState !== EncryptedCommunicationState.confirmed) {
@@ -179,7 +181,7 @@ export class SecureClient implements ICommunication {
       }
       case MessageTypes.SecurityRequest:
       {
-        this._log("now securing the connection");
+        this._logger.alignedLog(this._logTextAlign, "now securing the connection");
 
         this._EncryptedCommunicationState = EncryptedCommunicationState.initiated;
 
@@ -194,7 +196,7 @@ export class SecureClient implements ICommunication {
 
         this._initializeAesSymmetricCipher(jsonPayload.publicKey);
 
-        this._log("sending public key");
+        this._logger.alignedLog(this._logTextAlign, "sending public key");
 
         this._EncryptedCommunicationState = EncryptedCommunicationState.ready;
 
@@ -208,12 +210,12 @@ export class SecureClient implements ICommunication {
       }
       case MessageTypes.SecurityResponse:
       {
-        this._log("processing received security response");
+        this._logger.alignedLog(this._logTextAlign, "processing received security response");
 
         if (this._EncryptedCommunicationState !== EncryptedCommunicationState.initiated)
           throw new Error("was expecting a security response");
 
-        this._log("computing the shared secret with the received public key");
+        this._logger.alignedLog(this._logTextAlign, "computing the shared secret with the received public key");
 
         const jsonPayload = JSON.parse(jsonMsg.payload);
 
@@ -222,7 +224,7 @@ export class SecureClient implements ICommunication {
 
         this._initializeAesSymmetricCipher(jsonPayload.publicKey);
 
-        this._log("connection now confirmed secure");
+        this._logger.alignedLog(this._logTextAlign, "connection now confirmed secure");
 
         this._EncryptedCommunicationState = EncryptedCommunicationState.ready;
 
@@ -239,7 +241,7 @@ export class SecureClient implements ICommunication {
     if (this._wasDeleted)
       throw new Error("was deleted");
 
-    this._log("now securing the connection");
+    this._logger.alignedLog(this._logTextAlign, "now securing the connection");
 
     this._EncryptedCommunicationState = EncryptedCommunicationState.initiated;
 
@@ -269,16 +271,16 @@ export class SecureClient implements ICommunication {
 
     if (this._EncryptedCommunicationState === EncryptedCommunicationState.unencrypted) {
 
-      this._log(`[unencrypted] sending a message:`);
-      this._log(`[unencrypted] "${inText}"`);
+      this._logger.alignedLog(this._logTextAlign, `[unencrypted] sending a message:`);
+      this._logger.alignedLog(this._logTextAlign, `[unencrypted] "${inText}"`);
 
       this._communication.send(JSON.stringify({ type: MessageTypes.PlainMessage, payload: (inText) }));
     } else {
 
-      this._log(`[encrypted] sending a message:`);
-      this._log(`[encrypted] "${inText}"`);
+      this._logger.alignedLog(this._logTextAlign, `[encrypted] sending a message:`);
+      this._logger.alignedLog(this._logTextAlign, `[encrypted] "${inText}"`);
 
-      this._log(`[encrypted] encrypting`);
+      this._logger.alignedLog(this._logTextAlign, `[encrypted] encrypting`);
       const startTime = Date.now();
 
       const wasmModule = CrytpoppWasmModule.get();
@@ -286,7 +288,7 @@ export class SecureClient implements ICommunication {
       const encrypted = this._aesSymmetricCipher.encryptFromHexStrAsHexStr(textAshex);
 
       const endTime = Date.now();
-      this._log(`[encrypted] encrypted (${endTime - startTime}ms)`);
+      this._logger.alignedLog(this._logTextAlign, `[encrypted] encrypted (${endTime - startTime}ms)`);
 
       this._communication.send(JSON.stringify({ type: MessageTypes.EncryptedMessage, payload: encrypted }));
     }
@@ -309,46 +311,64 @@ export class SecureClient implements ICommunication {
     return this._EncryptedCommunicationState;
   }
 
-  private _log(inLogMsg: string) {
-    if (this._onLogging)
-      this._onLogging(inLogMsg);
-  }
-
   private _generateDiffieHellmanKeys() {
 
-    this._log("------------------------------------");
-    this._log("Diffie Hellman Key Exchange");
-    this._log("generating public/private keys");
-    this._log("2048-bit MODP Group with 256-bit Prime Order Subgroup");
+    this._logger.alignedLog(this._logTextAlign, "------------------------------------");
+    this._logger.alignedLog(this._logTextAlign, "Diffie Hellman Key Exchange");
+    this._logger.alignedLog(this._logTextAlign, "generating public/private keys");
+    this._logger.alignedLog(this._logTextAlign, "2048-bit MODP Group with 256-bit Prime Order Subgroup");
     const startTime = Date.now();
 
     this._dhClient.generateKeys(localP, localQ, localG);
     this._publicKey = this._dhClient.getPublicKeyAsHexStr();
 
     const endTime = Date.now();
-    this._log(`generated public/private keys (${endTime - startTime}ms)`);
-    this._log("------------------------------------");
+    this._logger.alignedLog(this._logTextAlign, `generated public/private keys (${endTime - startTime}ms)`);
+    this._logger.alignedLog(this._logTextAlign, "------------------------------------");
   }
 
   private _initializeAesSymmetricCipher(publicKey: string) {
 
-    this._dhClient.computeSharedSecretFromHexStr(publicKey);
-    this._sharedSecret = this._dhClient.getSharedSecretAsHexStr();
+    {
+      this._logger.alignedLog(this._logTextAlign, "------------------------------------");
+      this._logger.alignedLog(this._logTextAlign, "Diffie Hellman Key Exchange");
+      this._logger.alignedLog(this._logTextAlign, "shared secret");
+      this._logger.alignedLog(this._logTextAlign, "computing");
 
-    this._log("------------------------------------");
-    this._log("AES Symmetric Cipher");
-    this._log("initializing");
-    this._log("256bits key from computed shared secret");
-    const startTime = Date.now();
+      const startTime = Date.now();
+      this._dhClient.computeSharedSecretFromHexStr(publicKey);
+      const endTime = Date.now();
 
-    this._aesSymmetricCipher.initializeFromHexStr(
-      this._sharedSecret.slice(0, 64), // 64hex -> 32bytes ->  256bits key
-      this._ivValue!,
-    );
+      this._sharedSecret = this._dhClient.getSharedSecretAsHexStr();
 
-    const endTime = Date.now();
-    this._log(`initialized (${endTime - startTime}ms)`);
-    this._log("------------------------------------");
+      this._logger.alignedLog(this._logTextAlign, `computed (${endTime - startTime}ms)`);
+      printHexadecimalStrings(this._logger, this._sharedSecret, 64, this._logTextAlign);
+      this._logger.alignedLog(this._logTextAlign, "------------------------------------");
+
+    }
+
+    {
+      this._logger.alignedLog(this._logTextAlign, "------------------------------------");
+      this._logger.alignedLog(this._logTextAlign, "AES Symmetric Cipher");
+      this._logger.alignedLog(this._logTextAlign, "256bits key from computed shared secret");
+
+      const actualKey = this._sharedSecret.slice(0, 64); // 64hex -> 32bytes ->  256bits key
+      this._logger.alignedLog(this._logTextAlign, `actual key used`);
+      printHexadecimalStrings(this._logger, actualKey, 32, this._logTextAlign);
+
+      this._logger.alignedLog(this._logTextAlign, "initializing");
+      const startTime = Date.now();
+
+      this._aesSymmetricCipher.initializeFromHexStr(
+        actualKey,
+        this._ivValue!,
+      );
+
+      const endTime = Date.now();
+      this._logger.alignedLog(this._logTextAlign, `initialized (${endTime - startTime}ms)`);
+      this._logger.alignedLog(this._logTextAlign, "------------------------------------");
+    }
+
   }
 
 };

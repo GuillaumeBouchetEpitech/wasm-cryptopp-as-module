@@ -40,20 +40,23 @@ std::string RSAPrivateKey::getAsPemString() const
 
 std::string RSAPrivateKey::signFromHexStrToHexStr(AutoSeededRandomPool& rng, const std::string& inHexStr)
 {
-  std::string dataDecStr = helpers::hexAsDecString(inHexStr);
+  std::string dataDecStr = helpers::hexStr_to_byteBuffer(inHexStr);
   const uint8_t* dataDecStrPtr = reinterpret_cast<const uint8_t*>(dataDecStr.data());
 
   CryptoPP::RSASSA_PKCS1v15_SHA_Signer signer(_rsaPrivate);
 
+  constexpr bool pumpAll = true;
+  constexpr bool putMessage = true; // for recovery
+
   std::string signature;
-  CryptoPP::StringSource source(dataDecStrPtr, dataDecStr.size(), true,
+  CryptoPP::StringSource source(dataDecStrPtr, dataDecStr.size(), pumpAll,
       new CryptoPP::SignerFilter(rng._prng, signer,
           new CryptoPP::StringSink(signature),
-          true // putMessage for recovery
+          putMessage
     ) // SignerFilter
   ); // StringSource
 
-  return helpers::decAsHexString(signature);
+  return helpers::byteBuffer_to_hexStr(signature);
 }
 
 //
@@ -84,21 +87,23 @@ std::string RSAPublicKey::getAsPemString() const
 
 std::string RSAPublicKey::verifyFromHexStrToHexStr(const std::string& inHexStr)
 {
-  std::string dataDecStr = helpers::hexAsDecString(inHexStr);
+  std::string dataDecStr = helpers::hexStr_to_byteBuffer(inHexStr);
   const uint8_t* dataDecStrPtr = reinterpret_cast<const uint8_t*>(dataDecStr.data());
 
   CryptoPP::RSASSA_PKCS1v15_SHA_Verifier verifier(_rsaPublic);
 
+  constexpr bool pumpAll = true;
+
   std::string recovered;
-  CryptoPP::StringSource source(dataDecStrPtr, dataDecStr.size(), true,
+  CryptoPP::StringSource source(dataDecStrPtr, dataDecStr.size(), pumpAll,
       new CryptoPP::SignatureVerificationFilter(
           verifier,
           new CryptoPP::StringSink(recovered),
-          CryptoPP::HashVerificationFilter::Flags::THROW_EXCEPTION | CryptoPP::HashVerificationFilter::Flags::PUT_MESSAGE
+          CryptoPP::SignatureVerificationFilter::Flags::THROW_EXCEPTION | CryptoPP::SignatureVerificationFilter::Flags::PUT_MESSAGE
     ) // SignatureVerificationFilter
   ); // StringSource
 
-  return helpers::decAsHexString(recovered);
+  return helpers::byteBuffer_to_hexStr(recovered);
 }
 
 

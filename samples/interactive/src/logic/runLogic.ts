@@ -3,7 +3,7 @@ import { SecureClient } from "./SecureClient";
 
 import { FakeWebSocket } from "./internals/FakeWebSocket";
 
-import { Logger } from "../../../_common";
+import { Logger } from "@local-framework";
 
 export const runLogic = async (logger: Logger) => {
 
@@ -29,7 +29,7 @@ export const runLogic = async (logger: Logger) => {
   logger.logCenter(logger.makeBorder(`initialize`));
 
   logger.logLeft(`${clientA_str} created`);
-  const clientA = new SecureClient(fakeWebSocketA, (inLogMsg) => logger.logLeft(inLogMsg));
+  const clientA = new SecureClient(fakeWebSocketA, logger, 'left');
   clientA.onReceive((inText) => {
     logger.alignedLog("left", `${clientA_str} received:`);
     logger.alignedLog("left", logger.makeColor([64,128+64,64], logger.makeSize(25, `"${inText}"`)));
@@ -37,7 +37,7 @@ export const runLogic = async (logger: Logger) => {
   });
 
   logger.logRight(`${clientB_str} created`);
-  const clientB = new SecureClient(fakeWebSocketB, (inLogMsg) => logger.logRight(inLogMsg));
+  const clientB = new SecureClient(fakeWebSocketB, logger, 'right');
   clientB.onReceive((inText) => {
     logger.alignedLog("right", `${clientB_str} received:`);
     // logger.alignedLog("right", logger.makeColor([64,128+64,64], `"${inText}"`));

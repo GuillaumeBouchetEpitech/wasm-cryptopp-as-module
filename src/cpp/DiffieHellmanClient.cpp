@@ -61,7 +61,7 @@ void DiffieHellmanClient::generateKeys(const std::string& inP, const std::string
 
 void DiffieHellmanClient::computeSharedSecretFromHexStr(const std::string& inHexOtherPublic)
 {
-  std::string decStr = helpers::hexAsDecString(inHexOtherPublic);
+  std::string decStr = helpers::hexStr_to_byteBuffer(inHexOtherPublic);
 
   CryptoPP::SecByteBlock otherPublic(reinterpret_cast<const uint8_t*>(decStr.c_str()), decStr.size());
 
@@ -80,14 +80,14 @@ std::string DiffieHellmanClient::getPublicKeyAsHexStr() const
 {
   const char* pData = reinterpret_cast<const char*>(_pub.BytePtr());
   const std::string_view publicKey(pData, _pub.SizeInBytes());
-  return helpers::decAsHexString(publicKey);
+  return helpers::byteBuffer_to_hexStr(publicKey);
 }
 
 std::string DiffieHellmanClient::getSharedSecretAsHexStr() const
 {
   const char* pData = reinterpret_cast<const char*>(_shared.BytePtr());
   const std::string_view sharedSecret(pData, _shared.SizeInBytes());
-  return helpers::decAsHexString(sharedSecret);
+  return helpers::byteBuffer_to_hexStr(sharedSecret);
 }
 
 

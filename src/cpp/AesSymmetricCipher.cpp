@@ -21,8 +21,8 @@ void AesSymmetricCipher::initializeFromHexStr(
   const std::string& inIv
 ) {
 
-  std::string keyDecStr = helpers::hexAsDecString(inKey);
-  std::string ivDecStr = helpers::hexAsDecString(inIv);
+  std::string keyDecStr = helpers::hexStr_to_byteBuffer(inKey);
+  std::string ivDecStr = helpers::hexStr_to_byteBuffer(inIv);
 
   if (keyDecStr.size() < CryptoPP::AES::MIN_KEYLENGTH)
   {
@@ -67,7 +67,7 @@ void AesSymmetricCipher::initializeFromHexStr(
 
 std::string AesSymmetricCipher::encryptFromHexStrAsHexStr(const std::string& inHexStr)
 {
-  std::string dataDecStr = helpers::hexAsDecString(inHexStr);
+  std::string dataDecStr = helpers::hexStr_to_byteBuffer(inHexStr);
   const uint8_t* dataDecStrPtr = reinterpret_cast<const uint8_t*>(dataDecStr.data());
 
   std::string outEncoded;
@@ -78,12 +78,12 @@ std::string AesSymmetricCipher::encryptFromHexStrAsHexStr(const std::string& inH
     ) // StreamTransformationFilter
   ); // StringSource
 
-  return helpers::decAsHexString(outEncoded);
+  return helpers::byteBuffer_to_hexStr(outEncoded);
 }
 
 std::string AesSymmetricCipher::decryptFromHexStrAsHexStr(const std::string& inHexStr)
 {
-  std::string dataDecStr = helpers::hexAsDecString(inHexStr);
+  std::string dataDecStr = helpers::hexStr_to_byteBuffer(inHexStr);
   const uint8_t* dataDecStrPtr = reinterpret_cast<const uint8_t*>(dataDecStr.data());
 
   std::string outRecovered;
@@ -94,5 +94,5 @@ std::string AesSymmetricCipher::decryptFromHexStrAsHexStr(const std::string& inH
     ) // StreamTransformationFilter
   ); // StringSource
 
-  return helpers::decAsHexString(outRecovered);
+  return helpers::byteBuffer_to_hexStr(outRecovered);
 }

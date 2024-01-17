@@ -98,6 +98,16 @@
 
     /* Completeness */
     // "skipDefaultLibCheck": true,                      /* Skip type checking .d.ts files that are included with TypeScript. */
-    "skipLibCheck": true                                 /* Skip type checking all .d.ts files. */
+    "skipLibCheck": true,                                /* Skip type checking all .d.ts files. */
+
+    "baseUrl": "./",
+    "rootDir": "./",
+
+    "paths": {
+      "@local-framework": ["./samples/_common/index.ts"],
+      "@local-worker-framework": ["./samples/_common/indexWorker.ts"],
+      "*": [ "wasmCryptoppJs", "./types/wasm-cryptopp.d.ts" ]
+    }
+
   }
 }

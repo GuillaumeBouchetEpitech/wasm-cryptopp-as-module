@@ -1,6 +1,10 @@
 
+interface WasmOptions {
+  locateFile: (path: string, prefix: string) => string;
+}
+
 export default wasmCryptoppJs;
-declare function wasmCryptoppJs(): Promise<typeof wasmCryptoppJs>;
+declare function wasmCryptoppJs(options?: WasmOptions): Promise<typeof wasmCryptoppJs>;
 
 declare module wasmCryptoppJs {
 
@@ -34,7 +38,7 @@ declare module wasmCryptoppJs {
   class AesSymmetricCipherJs {
     constructor();
     delete(): void;
-    initializeFromHexStr( inKeyStr: string, inIvStr: string): void;
+    initializeFromHexStr(inKeyStr: string, inIvStr: string): void;
     encryptFromHexStrAsHexStr(inStr: string): string;
     decryptFromHexStrAsHexStr(inStr: string): string;
   };
@@ -47,7 +51,7 @@ declare module wasmCryptoppJs {
     constructor();
     delete(): void;
     generateRandomWithKeySize(rng: AutoSeededRandomPoolJs, keySize: number): void;
-    loadFromPemString(inPemString: string): string;
+    loadFromPemString(inPemString: string): void;
     getAsPemString(): string;
     signFromHexStrToHexStr(rng: AutoSeededRandomPoolJs, inHexStr: string): string;
   };
@@ -60,7 +64,7 @@ declare module wasmCryptoppJs {
     constructor();
     delete(): void;
     setFromPrivateKey(inPrivateKey: RSAPrivateKey): void;
-    loadFromPemString(inPemString: string): string;
+    loadFromPemString(inPemString: string): void;
     getAsPemString(): string;
     verifyFromHexStrToHexStr(inHexStr: string): string;
   };
@@ -69,6 +73,16 @@ declare module wasmCryptoppJs {
   //
   //
 
+  const deriveSha256HexStrKeyFromHexStrData: (
+    inKeyHexStr: string,
+    inSaltHexStr: string,
+    inInfoHexStr: string,
+    inKeySize: number
+  ) => string;
+
+  //
+  //
+  //
   const utf8ToHex: (inJsStr: string) => string;
   const hexToUtf8: (inJsStr: string) => string;
 

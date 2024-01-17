@@ -8,7 +8,10 @@ Module.utf8ToHex = (str) => {
   }).join('');
 };
 
-Module.hexToUtf8 = (str) => {
-  return decodeURIComponent(str.replace(/\s+/g, '').replace(/[0-9a-fA-F]{2}/g, '%$&'));
+Module.hexToUtf8 = (inHexStr) => {
+  let outStr = '';
+  for (let ii = 0; ii < inHexStr.length; ii += 2) {
+    outStr += String.fromCharCode(parseInt(inHexStr.substr(ii, 2), 16));
+  }
+  return outStr;
 };
-

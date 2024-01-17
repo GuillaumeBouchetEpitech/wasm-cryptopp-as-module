@@ -30,14 +30,14 @@ TEST(AesSymmetricCipher_test, same_cipher) {
     //
     //
 
-    const std::string hexMessage = helpers::decAsHexString(message);
+    const std::string hexMessage = helpers::byteBuffer_to_hexStr(message);
     const std::string encryptedHexStr = cipher.encryptFromHexStrAsHexStr(hexMessage);
 
     //
     //
 
     const std::string decryptedHexStr = cipher.decryptFromHexStrAsHexStr(encryptedHexStr);
-    const std::string decryptedMessage = helpers::hexAsDecString(decryptedHexStr);
+    const std::string decryptedMessage = helpers::hexStr_to_byteBuffer(decryptedHexStr);
 
     //
     //
@@ -72,14 +72,14 @@ TEST(AesSymmetricCipher_test, two_cipher_swap_roles) {
     //
     //
 
-    const std::string hexMessage = helpers::decAsHexString(message);
+    const std::string hexMessage = helpers::byteBuffer_to_hexStr(message);
     const std::string encryptedHexStr = cipherA.encryptFromHexStrAsHexStr(hexMessage);
 
     //
     //
 
     const std::string decryptedHexStr = cipherB.decryptFromHexStrAsHexStr(encryptedHexStr);
-    const std::string decryptedMessage = helpers::hexAsDecString(decryptedHexStr);
+    const std::string decryptedMessage = helpers::hexStr_to_byteBuffer(decryptedHexStr);
 
     ASSERT_EQ(message, decryptedMessage);
   }
@@ -91,14 +91,14 @@ TEST(AesSymmetricCipher_test, two_cipher_swap_roles) {
     //
     //
 
-    const std::string hexMessage = helpers::decAsHexString(message);
+    const std::string hexMessage = helpers::byteBuffer_to_hexStr(message);
     const std::string encryptedHexStr = cipherA.encryptFromHexStrAsHexStr(hexMessage);
 
     //
     //
 
     const std::string decryptedHexStr = cipherB.decryptFromHexStrAsHexStr(encryptedHexStr);
-    const std::string decryptedMessage = helpers::hexAsDecString(decryptedHexStr);
+    const std::string decryptedMessage = helpers::hexStr_to_byteBuffer(decryptedHexStr);
 
     ASSERT_EQ(message, decryptedMessage);
   }
@@ -131,14 +131,14 @@ TEST(AesSymmetricCipher_test, two_cipher_swap_roles_multiple_times) {
     //
     //
 
-    const std::string hexMessage = helpers::decAsHexString(message);
+    const std::string hexMessage = helpers::byteBuffer_to_hexStr(message);
     const std::string encryptedHexStr = cipherA.encryptFromHexStrAsHexStr(hexMessage);
 
     //
     //
 
     const std::string decryptedHexStr = cipherB.decryptFromHexStrAsHexStr(encryptedHexStr);
-    const std::string decryptedMessage = helpers::hexAsDecString(decryptedHexStr);
+    const std::string decryptedMessage = helpers::hexStr_to_byteBuffer(decryptedHexStr);
 
     ASSERT_EQ(message, decryptedMessage);
   }
@@ -151,14 +151,14 @@ TEST(AesSymmetricCipher_test, two_cipher_swap_roles_multiple_times) {
     //
     //
 
-    const std::string hexMessage = helpers::decAsHexString(message);
+    const std::string hexMessage = helpers::byteBuffer_to_hexStr(message);
     const std::string encryptedHexStr = cipherA.encryptFromHexStrAsHexStr(hexMessage);
 
     //
     //
 
     const std::string decryptedHexStr = cipherB.decryptFromHexStrAsHexStr(encryptedHexStr);
-    const std::string decryptedMessage = helpers::hexAsDecString(decryptedHexStr);
+    const std::string decryptedMessage = helpers::hexStr_to_byteBuffer(decryptedHexStr);
 
     ASSERT_EQ(message, decryptedMessage);
   }
@@ -171,14 +171,14 @@ TEST(AesSymmetricCipher_test, two_cipher_swap_roles_multiple_times) {
     //
     //
 
-    const std::string hexMessage = helpers::decAsHexString(message);
+    const std::string hexMessage = helpers::byteBuffer_to_hexStr(message);
     const std::string encryptedHexStr = cipherA.encryptFromHexStrAsHexStr(hexMessage);
 
     //
     //
 
     const std::string decryptedHexStr = cipherB.decryptFromHexStrAsHexStr(encryptedHexStr);
-    const std::string decryptedMessage = helpers::hexAsDecString(decryptedHexStr);
+    const std::string decryptedMessage = helpers::hexStr_to_byteBuffer(decryptedHexStr);
 
     ASSERT_EQ(message, decryptedMessage);
   }

@@ -2,6 +2,7 @@
 #include "../DiffieHellmanClient.hpp"
 #include "../AutoSeededRandomPool.hpp"
 #include "../AesSymmetricCipher.hpp"
+#include "../KeyDerivationScheme.hpp"
 #include "../RSAFeatures.hpp"
 
 #include "getExceptionMessage.hpp"
@@ -53,6 +54,9 @@ EMSCRIPTEN_BINDINGS(my_namespace) {
     .function("verifyFromHexStrToHexStr", &RSAPublicKey::verifyFromHexStrToHexStr)
     ;
 
+
+
+  emscripten::function("deriveSha256HexStrKeyFromHexStrData", &deriveSha256HexStrKeyFromHexStrData);
 
 
   emscripten::function("getExceptionMessage", &getExceptionMessage);

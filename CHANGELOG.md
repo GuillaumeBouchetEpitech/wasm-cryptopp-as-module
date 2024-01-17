@@ -1,6 +1,12 @@
 
 # Changelog
 
+## [0.0.3]
+### Changed
+- fix: type safety withing vscode
+- feat: derive SHA256 Key
+- chore: new sample -> interactive-async
+
 ## [0.0.2]
 ### Changed
 - feat: RSA private/public key sign/verify

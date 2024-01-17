@@ -1,5 +1,6 @@
 
-import { Logger, CrytpoppWasmModule, printHexadecimalStrings } from "../../../_common";
+// import { Logger, CrytpoppWasmModule, printHexadecimalStrings } from "../../../_common";
+import { Logger, CrytpoppWasmModule, printHexadecimalStrings } from "@local-framework";
 
 import { profileScope } from "./internals";
 
@@ -70,9 +71,9 @@ export const runDiffieHellmanClientTest = async (logger: Logger) => {
   });
   logger.logLeft(`${clientA_str} provide public key`);
   const pubKeyHexStr_A = clientA.getPublicKeyAsHexStr();
-  // logger.log(`${clientA_str} public key as hexadecimal value:`);
-  // printHexadecimalStrings(logger, pubKeyHexStr_A, 64);
-  // logger.log();
+  logger.logLeft(`${clientA_str} public key as hexadecimal value:`);
+  printHexadecimalStrings(logger, pubKeyHexStr_A, 64, 'left');
+  logger.log();
 
   logger.logCenter(logger.makeBorder(`${clientB_str} initialize`));
 
@@ -87,9 +88,9 @@ export const runDiffieHellmanClientTest = async (logger: Logger) => {
   });
   logger.logRight(`${clientB_str} provide public key`);
   const pubKeyHexStr_B = clientB.getPublicKeyAsHexStr();
-  // logger.log(`${clientB_str} public key as hexadecimal value:`);
-  // printHexadecimalStrings(logger, pubKeyHexStr_B, 64);
-  // logger.log();
+  logger.logRight(`${clientB_str} public key as hexadecimal value:`);
+  printHexadecimalStrings(logger, pubKeyHexStr_B, 64, 'right');
+  logger.log();
 
   //
   //

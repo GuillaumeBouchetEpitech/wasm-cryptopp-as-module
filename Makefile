@@ -139,7 +139,7 @@ ifeq ($(build_platform),native)
 
 else ifeq ($(build_platform),web-wasm)
 
-CXXFLAGS += -lembind
+# CXXFLAGS += -lembind
 
 
 LDFLAGS += -s TOTAL_MEMORY=16Mb # 16Kb, 256Mb, etc.
@@ -162,6 +162,7 @@ ifeq ($(build_mode),debug)
 LDFLAGS += -s DEMANGLE_SUPPORT=1
 LDFLAGS += -s NO_DISABLE_EXCEPTION_CATCHING
 LDFLAGS += -s ASSERTIONS
+# LDFLAGS += -lembind
 
 endif
 
@@ -206,7 +207,7 @@ else ifeq ($(build_platform),web-wasm)
 
 wasm-module: ensure-folders $(OBJ)
 	@echo ' ---> building $(LOG_INFO): "wasm module"'
-	@$(CXX) $(CXXFLAGS) $(OBJ) -o $(NAME_MODULE) $(LDFLAGS)
+	@$(CXX) $(CXXFLAGS) -lembind $(OBJ) -o $(NAME_MODULE) $(LDFLAGS)
 	@echo '   --> built $(LOG_INFO): "wasm module"'
 
 endif

@@ -1,14 +1,11 @@
 {
+    "extends": "../tsconfig.json",
     "compilerOptions": {
-        "lib": ["esnext", "dom"],
         "noImplicitAny": true,
         "target": "esnext",
         "module": "esnext",
         "strict": true,
         "moduleResolution": "node",
-        "rootDir": ".",
-        "paths": {
-            "*": [ "wasmCryptoppJs", "../../types/wasm-cryptopp.d.ts" ]
-        }
+        "rootDir": ".."
     }
 }

@@ -4,8 +4,10 @@
 #include "aes.h"
 // CryptoPP::AES
 
-#include "ccm.h"
+#include "modes.h"
 // CryptoPP::CBC_Mode;
+// CryptoPP::CTR_Mode;
+
 
 class AesSymmetricCipher
 {
@@ -25,6 +27,8 @@ public:
 private:
 	CryptoPP::CBC_Mode<CryptoPP::AES>::Encryption _encryption;
 	CryptoPP::CBC_Mode<CryptoPP::AES>::Decryption _decryption;
+	// CryptoPP::CTR_Mode<CryptoPP::AES>::Encryption _encryption;
+	// CryptoPP::CTR_Mode<CryptoPP::AES>::Decryption _decryption;
 
 };
 
