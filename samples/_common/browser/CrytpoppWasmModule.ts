@@ -18,7 +18,7 @@ export class CrytpoppWasmModule {
     CrytpoppWasmModule._wasmModule = await wasmCryptoppJs({
       locateFile: (url: string) => {
         console.log(`url: "${url}"`);
-        return `/build/${url}`;
+        return `../../build/${url}`;
       },
     });
   }

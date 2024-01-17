@@ -48,7 +48,7 @@ http://guillaumebouchetepitech.github.io/wasm-cryptopp-as-module/samples/interac
 ## Demo 1 (sync version):
 http://guillaumebouchetepitech.github.io/wasm-cryptopp-as-module/samples/interactive/index.html
 
-## Demo 3:
+## Demo 2:
 http://guillaumebouchetepitech.github.io/wasm-cryptopp-as-module/samples/basic/index.html
 
 **`/!\ important /!\`**
