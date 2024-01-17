@@ -42,10 +42,13 @@ It should be possible to expose most Crypto++ capabilities.
 
 **`/!\ important /!\`**
 
-## Demo 1:
+## Demo 1 (async version):
+http://guillaumebouchetepitech.github.io/wasm-cryptopp-as-module/samples/interactive-async/index.html
+
+## Demo 1 (sync version):
 http://guillaumebouchetepitech.github.io/wasm-cryptopp-as-module/samples/interactive/index.html
 
-## Demo 2:
+## Demo 3:
 http://guillaumebouchetepitech.github.io/wasm-cryptopp-as-module/samples/basic/index.html
 
 **`/!\ important /!\`**
