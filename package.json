@@ -13,6 +13,8 @@
     "build-basic-async-debug": "export BUILD_MODE='DEBUG' && rollup --config ./samples/basic-async/rollup.config.js",
     "build-interactive-release": "rollup --config ./samples/interactive/rollup.config.js",
     "build-interactive-debug": "export BUILD_MODE='DEBUG' && rollup --config ./samples/interactive/rollup.config.js",
+    "build-station-to-station-async-release": "rollup --config ./samples/station-to-station-async/rollup.config.js",
+    "build-station-to-station-async-debug": "export BUILD_MODE='DEBUG' && rollup --config ./samples/station-to-station-async/rollup.config.js",
     "build-nodejs-release": "rollup --config ./samples/nodejs/rollup.config.js",
     "build-nodejs-debug": "export BUILD_MODE='DEBUG' && rollup --config ./samples/nodejs/rollup.config.js",
     "build-interactive-async-main": "export BUILD_TYPE='MAIN'      && rollup --config ./samples/interactive-async/rollup.config.js",

@@ -79,7 +79,10 @@
     "ios": "cpp",
     "locale": "cpp",
     "queue": "cpp",
-    "semaphore": "cpp"
+    "semaphore": "cpp",
+    "numbers": "cpp",
+    "span": "cpp",
+    "valarray": "cpp"
   },
   "files.exclude": {
     "/bin": true,

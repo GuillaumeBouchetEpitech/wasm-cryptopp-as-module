@@ -77,6 +77,19 @@ describe("AutoSeededRandomPoolJs", () => {
       prng.delete();
     });
 
+    test('size of 512', async () => {
+      const prng = new wasmModule.AutoSeededRandomPoolJs();
+
+      const allValues = new Set<string>();
+      for (let ii = 0; ii < 200; ++ii) {
+        const randomHexStr = prng.getRandomHexStr(512);
+        expect(allValues.has(randomHexStr)).toEqual(false);
+        allValues.add(randomHexStr);
+      }
+
+      prng.delete();
+    });
+
   });
 
 });

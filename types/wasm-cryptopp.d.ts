@@ -31,6 +31,16 @@ declare module wasmCryptoppJs {
     getRandomHexStr(inBufferSize: number): string;
   };
 
+  class HashDrbgRandomGeneratorJs {
+    constructor(
+      entropy: string,
+      nonce: string,
+      personalization: string
+    );
+    delete(): void;
+    getRandomHexStr(inBufferSize: number): string;
+  };
+
   //
   //
   //
@@ -50,10 +60,12 @@ declare module wasmCryptoppJs {
   class RSAPrivateKeyJs {
     constructor();
     delete(): void;
-    generateRandomWithKeySize(rng: AutoSeededRandomPoolJs, keySize: number): void;
+    generateRandomWithKeySizeUsingAutoSeeded(rng: AutoSeededRandomPoolJs, keySize: number): void;
+    generateRandomWithKeySizeUsingHashDrbg(rng: HashDrbgRandomGeneratorJs, keySize: number): void;
     loadFromPemString(inPemString: string): void;
     getAsPemString(): string;
-    signFromHexStrToHexStr(rng: AutoSeededRandomPoolJs, inHexStr: string): string;
+    signFromHexStrToHexStrUsingAutoSeeded(rng: AutoSeededRandomPoolJs, inHexStr: string): string;
+    signFromHexStrToHexStrUsingHashDrbg(rng: HashDrbgRandomGeneratorJs, inHexStr: string): string;
   };
 
   //

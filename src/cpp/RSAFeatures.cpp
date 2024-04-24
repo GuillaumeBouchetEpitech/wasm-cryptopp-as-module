@@ -19,7 +19,11 @@
 //
 //
 
-void RSAPrivateKey::generateRandomWithKeySize(AutoSeededRandomPool& rng, unsigned int keySize)
+void RSAPrivateKey::generateRandomWithKeySizeUsingAutoSeeded(AutoSeededRandomPool& rng, unsigned int keySize)
+{
+  _rsaPrivate.GenerateRandomWithKeySize(rng._prng, keySize);
+}
+void RSAPrivateKey::generateRandomWithKeySizeUsingHashDrbg(HashDrbgRandomGenerator& rng, unsigned int keySize)
 {
   _rsaPrivate.GenerateRandomWithKeySize(rng._prng, keySize);
 }
@@ -38,7 +42,17 @@ std::string RSAPrivateKey::getAsPemString() const
   return strPemVal;
 }
 
-std::string RSAPrivateKey::signFromHexStrToHexStr(AutoSeededRandomPool& rng, const std::string& inHexStr)
+std::string RSAPrivateKey::signFromHexStrToHexStrUsingAutoSeeded(AutoSeededRandomPool& rng, const std::string& inHexStr)
+{
+  return _signFromHexStrToHexStr(rng._prng, inHexStr);
+}
+
+std::string RSAPrivateKey::signFromHexStrToHexStrUsingHashDrbg(HashDrbgRandomGenerator& rng, const std::string& inHexStr)
+{
+  return _signFromHexStrToHexStr(rng._prng, inHexStr);
+}
+
+std::string RSAPrivateKey::_signFromHexStrToHexStr(CryptoPP::RandomNumberGenerator& rng, const std::string& inHexStr)
 {
   std::string dataDecStr = helpers::hexStr_to_byteBuffer(inHexStr);
   const uint8_t* dataDecStrPtr = reinterpret_cast<const uint8_t*>(dataDecStr.data());
@@ -50,7 +64,7 @@ std::string RSAPrivateKey::signFromHexStrToHexStr(AutoSeededRandomPool& rng, con
 
   std::string signature;
   CryptoPP::StringSource source(dataDecStrPtr, dataDecStr.size(), pumpAll,
-      new CryptoPP::SignerFilter(rng._prng, signer,
+      new CryptoPP::SignerFilter(rng, signer,
           new CryptoPP::StringSink(signature),
           putMessage
     ) // SignerFilter

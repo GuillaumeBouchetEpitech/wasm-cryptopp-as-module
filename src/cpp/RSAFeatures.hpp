@@ -2,6 +2,8 @@
 #pragma once
 
 #include "AutoSeededRandomPool.hpp"
+#include "HashDrbgRandomGenerator.hpp"
+
 
 #include "rsa.h"
 // CryptoPP::RSA::PrivateKey
@@ -21,14 +23,19 @@ public:
   ~RSAPrivateKey() = default;
 
 public:
-  void generateRandomWithKeySize(AutoSeededRandomPool& rng, unsigned int keySize);
+  void generateRandomWithKeySizeUsingAutoSeeded(AutoSeededRandomPool& rng, unsigned int keySize);
+  void generateRandomWithKeySizeUsingHashDrbg(HashDrbgRandomGenerator& rng, unsigned int keySize);
   void loadFromPemString(const std::string& inPemString);
 
 public:
   std::string getAsPemString() const;
 
 public:
-  std::string signFromHexStrToHexStr(AutoSeededRandomPool& rng, const std::string& inHexStr);
+  std::string signFromHexStrToHexStrUsingAutoSeeded(AutoSeededRandomPool& rng, const std::string& inHexStr);
+  std::string signFromHexStrToHexStrUsingHashDrbg(HashDrbgRandomGenerator& rng, const std::string& inHexStr);
+
+private:
+  std::string _signFromHexStrToHexStr(CryptoPP::RandomNumberGenerator& rng, const std::string& inHexStr);
 
 private:
   CryptoPP::RSA::PrivateKey _rsaPrivate;

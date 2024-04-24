@@ -131,16 +131,18 @@ export class AsyncSecureClient {
 
   onReceive(inCallback: onReceiveCallback): void {
 
-    if (this._wasDeleted)
+    if (this._wasDeleted) {
       throw new Error("was deleted");
+    }
 
     this._onReceiveCallbacks.push(inCallback);
   }
 
   get EncryptedCommunicationState() {
 
-    if (this._wasDeleted)
+    if (this._wasDeleted) {
       throw new Error("was deleted");
+    }
 
     return this._EncryptedCommunicationState;
   }

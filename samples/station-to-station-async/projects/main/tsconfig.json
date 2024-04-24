@@ -1,0 +1,10 @@
+{
+    "extends": "../../../base-tsconfig.json",
+    "compilerOptions": {
+        "lib": ["esnext", "dom"]
+    },
+    "include": [
+        "./src/main.ts",
+        "../../../_common/index.ts"
+    ]
+}

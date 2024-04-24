@@ -1,6 +1,14 @@
 
 # Changelog
 
+## [0.0.4]
+### Changed
+- feat: expose deterministic random generator Hash_DRBG
+- feat: modify RSA features to support Hash_DRBG
+- test: Hash_DRBG
+- test: SHA256 key derivation
+- test: station to station protocol prototype
+
 ## [0.0.3]
 ### Changed
 - fix: type safety withing vscode

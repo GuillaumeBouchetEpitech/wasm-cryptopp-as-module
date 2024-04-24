@@ -12,112 +12,237 @@ describe("RSAFeatures.spec", () => {
 
   describe("success", () => {
 
-    test('can sign and verify', async () => {
+    describe("using AutoSeededRandomPoolJs", () => {
 
-      //
-      // SETUP
-      //
+      test('can sign and verify', async () => {
 
-      const prng = new wasmModule.AutoSeededRandomPoolJs();
-      const privateKey = new wasmModule.RSAPrivateKeyJs();
-      const publicKey = new wasmModule.RSAPublicKeyJs();
+        //
+        // SETUP
+        //
 
-      //
-      // INITIALIZE
-      //
+        const prng = new wasmModule.AutoSeededRandomPoolJs();
+        const privateKey = new wasmModule.RSAPrivateKeyJs();
+        const publicKey = new wasmModule.RSAPublicKeyJs();
 
-      privateKey.generateRandomWithKeySize(prng, 3072);
-      publicKey.setFromPrivateKey(privateKey);
+        //
+        // INITIALIZE
+        //
 
-      //
-      // SIGN
-      //
+        privateKey.generateRandomWithKeySizeUsingAutoSeeded(prng, 3072);
+        publicKey.setFromPrivateKey(privateKey);
 
-      const payloadStr = "Hello from JavaScript!";
-      const payloadHexStr = wasmModule!.utf8ToHex(payloadStr);
+        //
+        // SIGN
+        //
 
-      const signedHexStr =  privateKey.signFromHexStrToHexStr(prng, payloadHexStr);
+        const payloadStr = "Hello from JavaScript!";
+        const payloadHexStr = wasmModule!.utf8ToHex(payloadStr);
 
-      expect(signedHexStr).not.toEqual(payloadStr);
-      expect(signedHexStr.length).toBeGreaterThan(payloadStr.length);
+        const signedHexStr =  privateKey.signFromHexStrToHexStrUsingAutoSeeded(prng, payloadHexStr);
 
-      //
-      // VERIFY
-      //
+        expect(signedHexStr).not.toEqual(payloadStr);
+        expect(signedHexStr.length).toBeGreaterThan(payloadStr.length);
 
-      const verifiedHexStr = publicKey.verifyFromHexStrToHexStr(signedHexStr);
-      const verifiedMessage = wasmModule.hexToUtf8(verifiedHexStr);
+        //
+        // VERIFY
+        //
 
-      expect(verifiedMessage).toEqual(payloadStr);
+        const verifiedHexStr = publicKey.verifyFromHexStrToHexStr(signedHexStr);
+        const verifiedMessage = wasmModule.hexToUtf8(verifiedHexStr);
 
-      //
-      // DEALLOCATE
-      //
+        expect(verifiedMessage).toEqual(payloadStr);
 
-      publicKey.delete();
-      privateKey.delete();
-      prng.delete();
+        //
+        // DEALLOCATE
+        //
+
+        publicKey.delete();
+        privateKey.delete();
+        prng.delete();
+
+      });
+
+      test('can get and load PEM, then sign and verify', async () => {
+
+        //
+        // SETUP
+        //
+
+        const prng = new wasmModule.AutoSeededRandomPoolJs();
+
+        const primarySet = {
+          privateKey: new wasmModule.RSAPrivateKeyJs(),
+          publicKey: new wasmModule.RSAPublicKeyJs(),
+        };
+
+        const secondarySet = {
+          privateKey: new wasmModule.RSAPrivateKeyJs(),
+          publicKey: new wasmModule.RSAPublicKeyJs(),
+        };
+
+        //
+        // INITIALIZE
+        //
+
+        primarySet.privateKey.generateRandomWithKeySizeUsingAutoSeeded(prng, 3072);
+        primarySet.publicKey.setFromPrivateKey(primarySet.privateKey);
+
+        secondarySet.privateKey.loadFromPemString(primarySet.privateKey.getAsPemString());
+        secondarySet.publicKey.loadFromPemString(primarySet.publicKey.getAsPemString());
+
+        //
+        // SIGN
+        //
+
+        const payloadStr = "Hello from JavaScript!";
+        const payloadHexStr = wasmModule!.utf8ToHex(payloadStr);
+
+        const signedHexStr =  primarySet.privateKey.signFromHexStrToHexStrUsingAutoSeeded(prng, payloadHexStr);
+
+        expect(signedHexStr).not.toEqual(payloadStr);
+        expect(signedHexStr.length).toBeGreaterThan(payloadStr.length);
+
+        //
+        // VERIFY
+        //
+
+        const verifiedHexStr = secondarySet.publicKey.verifyFromHexStrToHexStr(signedHexStr);
+        const verifiedMessage = wasmModule.hexToUtf8(verifiedHexStr);
+
+        expect(verifiedMessage).toEqual(payloadStr);
+
+        //
+        // DEALLOCATE
+        //
+
+        secondarySet.publicKey.delete();
+        secondarySet.privateKey.delete();
+        primarySet.publicKey.delete();
+        primarySet.privateKey.delete();
+        prng.delete();
+
+      });
 
     });
 
-    test('can get and load PEM, then sign and verify', async () => {
+    describe("using HashDrbgRandomGeneratorJs", () => {
 
-      //
-      // SETUP
-      //
+      test('can sign and verify', async () => {
 
-      const prng = new wasmModule.AutoSeededRandomPoolJs();
+        //
+        // SETUP
+        //
 
-      const primarySet = {
-        privateKey: new wasmModule.RSAPrivateKeyJs(),
-        publicKey: new wasmModule.RSAPublicKeyJs(),
-      };
+        const entropy = "1234567890abcdef";
+        const nonce = "my nonce";
+        const personalization = "my personalization";
 
-      const secondarySet = {
-        privateKey: new wasmModule.RSAPrivateKeyJs(),
-        publicKey: new wasmModule.RSAPublicKeyJs(),
-      };
+        const prng = new wasmModule.HashDrbgRandomGeneratorJs(entropy, nonce, personalization);
+        const privateKey = new wasmModule.RSAPrivateKeyJs();
+        const publicKey = new wasmModule.RSAPublicKeyJs();
 
-      //
-      // INITIALIZE
-      //
+        //
+        // INITIALIZE
+        //
 
-      primarySet.privateKey.generateRandomWithKeySize(prng, 3072);
-      primarySet.publicKey.setFromPrivateKey(primarySet.privateKey);
+        privateKey.generateRandomWithKeySizeUsingHashDrbg(prng, 3072);
+        publicKey.setFromPrivateKey(privateKey);
 
-      secondarySet.privateKey.loadFromPemString(primarySet.privateKey.getAsPemString());
-      secondarySet.publicKey.loadFromPemString(primarySet.publicKey.getAsPemString());
+        //
+        // SIGN
+        //
 
-      //
-      // SIGN
-      //
+        const payloadStr = "Hello from JavaScript!";
+        const payloadHexStr = wasmModule!.utf8ToHex(payloadStr);
 
-      const payloadStr = "Hello from JavaScript!";
-      const payloadHexStr = wasmModule!.utf8ToHex(payloadStr);
+        const signedHexStr =  privateKey.signFromHexStrToHexStrUsingHashDrbg(prng, payloadHexStr);
 
-      const signedHexStr =  primarySet.privateKey.signFromHexStrToHexStr(prng, payloadHexStr);
+        expect(signedHexStr).not.toEqual(payloadStr);
+        expect(signedHexStr.length).toBeGreaterThan(payloadStr.length);
 
-      expect(signedHexStr).not.toEqual(payloadStr);
-      expect(signedHexStr.length).toBeGreaterThan(payloadStr.length);
+        //
+        // VERIFY
+        //
 
-      //
-      // VERIFY
-      //
+        const verifiedHexStr = publicKey.verifyFromHexStrToHexStr(signedHexStr);
+        const verifiedMessage = wasmModule.hexToUtf8(verifiedHexStr);
 
-      const verifiedHexStr = secondarySet.publicKey.verifyFromHexStrToHexStr(signedHexStr);
-      const verifiedMessage = wasmModule.hexToUtf8(verifiedHexStr);
+        expect(verifiedMessage).toEqual(payloadStr);
 
-      expect(verifiedMessage).toEqual(payloadStr);
+        //
+        // DEALLOCATE
+        //
 
-      //
-      // DEALLOCATE
-      //
+        publicKey.delete();
+        privateKey.delete();
+        prng.delete();
 
-      secondarySet.publicKey.delete();
-      secondarySet.privateKey.delete();
-      primarySet.publicKey.delete();
-      primarySet.privateKey.delete();
-      prng.delete();
+      });
+
+      test('can get and load PEM, then sign and verify', async () => {
+
+        //
+        // SETUP
+        //
+
+        const entropy = "1234567890abcdef";
+        const nonce = "my nonce";
+        const personalization = "my personalization";
+
+        const prng = new wasmModule.HashDrbgRandomGeneratorJs(entropy, nonce, personalization);
+
+        const primarySet = {
+          privateKey: new wasmModule.RSAPrivateKeyJs(),
+          publicKey: new wasmModule.RSAPublicKeyJs(),
+        };
+
+        const secondarySet = {
+          privateKey: new wasmModule.RSAPrivateKeyJs(),
+          publicKey: new wasmModule.RSAPublicKeyJs(),
+        };
+
+        //
+        // INITIALIZE
+        //
+
+        primarySet.privateKey.generateRandomWithKeySizeUsingHashDrbg(prng, 3072);
+        primarySet.publicKey.setFromPrivateKey(primarySet.privateKey);
+
+        secondarySet.privateKey.loadFromPemString(primarySet.privateKey.getAsPemString());
+        secondarySet.publicKey.loadFromPemString(primarySet.publicKey.getAsPemString());
+
+        //
+        // SIGN
+        //
+
+        const payloadStr = "Hello from JavaScript!";
+        const payloadHexStr = wasmModule!.utf8ToHex(payloadStr);
+
+        const signedHexStr =  primarySet.privateKey.signFromHexStrToHexStrUsingHashDrbg(prng, payloadHexStr);
+
+        expect(signedHexStr).not.toEqual(payloadStr);
+        expect(signedHexStr.length).toBeGreaterThan(payloadStr.length);
+
+        //
+        // VERIFY
+        //
+
+        const verifiedHexStr = secondarySet.publicKey.verifyFromHexStrToHexStr(signedHexStr);
+        const verifiedMessage = wasmModule.hexToUtf8(verifiedHexStr);
+
+        expect(verifiedMessage).toEqual(payloadStr);
+
+        //
+        // DEALLOCATE
+        //
+
+        secondarySet.publicKey.delete();
+        secondarySet.privateKey.delete();
+        primarySet.publicKey.delete();
+        primarySet.privateKey.delete();
+        prng.delete();
+
+      });
 
     });
 
@@ -125,48 +250,105 @@ describe("RSAFeatures.spec", () => {
 
   describe("failure", () => {
 
-    test('public key verify garbage', async () => {
+    describe("using AutoSeededRandomPoolJs", () => {
 
-      //
-      // SETUP
-      //
+      test('public key verify garbage', async () => {
 
-      const prng = new wasmModule.AutoSeededRandomPoolJs();
-      const privateKey = new wasmModule.RSAPrivateKeyJs();
-      const publicKey = new wasmModule.RSAPublicKeyJs();
+        //
+        // SETUP
+        //
 
-      //
-      // INITIALIZE
-      //
+        const prng = new wasmModule.AutoSeededRandomPoolJs();
+        const privateKey = new wasmModule.RSAPrivateKeyJs();
+        const publicKey = new wasmModule.RSAPublicKeyJs();
 
-      privateKey.generateRandomWithKeySize(prng, 3072);
-      publicKey.setFromPrivateKey(privateKey);
+        //
+        // INITIALIZE
+        //
 
-      //
-      // VERIFY
-      //
+        privateKey.generateRandomWithKeySizeUsingAutoSeeded(prng, 3072);
+        publicKey.setFromPrivateKey(privateKey);
 
-      const garbageHexStr = prng.getRandomHexStr(128);
+        //
+        // VERIFY
+        //
 
-      let errorWasCaught = false;
+        const garbageHexStr = prng.getRandomHexStr(128);
 
-      try {
-        publicKey.verifyFromHexStrToHexStr(garbageHexStr);
-      } catch (err) {
-        const errMsg = wasmModule!.getExceptionMessage(err);
-        expect(errMsg).toEqual("VerifierFilter: digital signature not valid");
-        errorWasCaught = true;
-      }
+        let errorWasCaught = false;
 
-      expect(errorWasCaught).toEqual(true);
+        try {
+          publicKey.verifyFromHexStrToHexStr(garbageHexStr);
+        } catch (err) {
+          const errMsg = wasmModule!.getExceptionMessage(err);
+          expect(errMsg).toEqual("VerifierFilter: digital signature not valid");
+          errorWasCaught = true;
+        }
 
-      //
-      // DEALLOCATE
-      //
+        expect(errorWasCaught).toEqual(true);
 
-      publicKey.delete();
-      privateKey.delete();
-      prng.delete();
+        //
+        // DEALLOCATE
+        //
+
+        publicKey.delete();
+        privateKey.delete();
+        prng.delete();
+
+      });
+
+    });
+
+    describe("using HashDrbgRandomGeneratorJs", () => {
+
+      test('public key verify garbage', async () => {
+
+        //
+        // SETUP
+        //
+
+        const entropy = "1234567890abcdef";
+        const nonce = "my nonce";
+        const personalization = "my personalization";
+
+        const prng = new wasmModule.HashDrbgRandomGeneratorJs(entropy, nonce, personalization);
+        const privateKey = new wasmModule.RSAPrivateKeyJs();
+        const publicKey = new wasmModule.RSAPublicKeyJs();
+
+        //
+        // INITIALIZE
+        //
+
+        privateKey.generateRandomWithKeySizeUsingHashDrbg(prng, 3072);
+        publicKey.setFromPrivateKey(privateKey);
+
+        //
+        // VERIFY
+        //
+
+        const garbageHexStr = prng.getRandomHexStr(128);
+
+        let errorWasCaught = false;
+
+        try {
+          publicKey.verifyFromHexStrToHexStr(garbageHexStr);
+        } catch (err) {
+          const errMsg = wasmModule!.getExceptionMessage(err);
+          expect(errMsg).toEqual("VerifierFilter: digital signature not valid");
+          errorWasCaught = true;
+        }
+
+        expect(errorWasCaught).toEqual(true);
+
+        //
+        // DEALLOCATE
+        //
+
+        publicKey.delete();
+        privateKey.delete();
+        prng.delete();
+
+      });
 
     });
 

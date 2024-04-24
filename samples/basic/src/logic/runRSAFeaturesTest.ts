@@ -41,7 +41,7 @@ export const runRSAFeaturesTest = async (logger: Logger) => {
 
   logger.alignedLog('center', `generating`);
   await profileScope(() => {
-    primarySet.privateKey.generateRandomWithKeySize(prng, 3072);
+    primarySet.privateKey.generateRandomWithKeySizeUsingAutoSeeded(prng, 3072);
   }, (elapsed) => {
     logger.alignedLog('center', `generated (${elapsed}ms)`);
   });
@@ -87,7 +87,7 @@ export const runRSAFeaturesTest = async (logger: Logger) => {
 
   logger.alignedLog('center', `signing`);
   const signedHexStr = await profileScope(() => {
-    return secondarySet.privateKey.signFromHexStrToHexStr(prng, payloadHexStr);
+    return secondarySet.privateKey.signFromHexStrToHexStrUsingAutoSeeded(prng, payloadHexStr);
   }, (elapsed) => {
     logger.alignedLog('center', `signed (${elapsed}ms)`);
   });

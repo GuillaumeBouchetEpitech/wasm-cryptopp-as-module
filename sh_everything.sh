@@ -1,5 +1,16 @@
 #!/bin/bash
 
+BUILD_ALL_ARG=$1
+
+case $BUILD_ALL_ARG in
+build-all)
+  BUILD_ALL=yes
+  ;;
+*)
+  BUILD_ALL=no
+  ;;
+esac
+
 DIR_ROOT=$PWD
 
 #
@@ -94,7 +105,13 @@ tree -L 1 $DIR_DEPENDENCIES
 echo "building thirdparties libraries"
 cd $DIR_THIRDPARTIES
 
-make build_mode="release" build_platform="web-wasm" all -j4
+make build_mode="release" build_platform="web-wasm" all -j8
+
+case $BUILD_ALL in
+yes)
+  make build_mode="release" build_platform="native" all -j8
+  ;;
+esac
 
 cd $DIR_ROOT
 
@@ -106,7 +123,7 @@ cd $DIR_ROOT
 
 echo "building wasm module"
 
-make build_platform="web-wasm" build_mode="release" all -j4
+make build_platform="web-wasm" build_mode="release" all -j8
 
 #
 #

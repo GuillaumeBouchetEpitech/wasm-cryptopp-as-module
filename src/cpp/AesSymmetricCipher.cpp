@@ -7,6 +7,7 @@
 
 #include <string>
 #include <string_view>
+#include <sstream>
 
 #include <cstdlib>
 // std::exit
@@ -26,30 +27,38 @@ void AesSymmetricCipher::initializeFromHexStr(
 
   if (keyDecStr.size() < CryptoPP::AES::MIN_KEYLENGTH)
   {
-    std::string_view msg = "key too small";
+    std::stringstream sstr;
+    sstr << "AesSymmetricCipher, key too small (min is: " << CryptoPP::AES::MIN_KEYLENGTH << ", input was " << keyDecStr.size() << ")";
+    std::string msg = sstr.str();
     std::cerr << msg << std::endl;
-    throw std::invalid_argument(msg.data());
+    throw std::invalid_argument(msg);
   }
 
   if (keyDecStr.size() > CryptoPP::AES::MAX_KEYLENGTH)
   {
-    std::string_view msg = "key too big";
+    std::stringstream sstr;
+    sstr << "AesSymmetricCipher, key too big (max is: " << CryptoPP::AES::MAX_KEYLENGTH << ", input was " << keyDecStr.size() << ")";
+    std::string msg = sstr.str();
     std::cerr << msg << std::endl;
-    throw std::invalid_argument(msg.data());
+    throw std::invalid_argument(msg);
   }
 
   if (ivDecStr.size() < _encryption.MinIVLength())
   {
-    std::string_view msg = "iv too small";
+    std::stringstream sstr;
+    sstr << "AesSymmetricCipher, iv too small (min is: " << _encryption.MinIVLength() << ", input was " << ivDecStr.size() << ")";
+    std::string msg = sstr.str();
     std::cerr << msg << std::endl;
-    throw std::invalid_argument(msg.data());
+    throw std::invalid_argument(msg);
   }
 
   if (ivDecStr.size() > _encryption.MaxIVLength())
   {
-    std::string_view msg = "iv too big";
+    std::stringstream sstr;
+    sstr << "AesSymmetricCipher, iv too big (max is: " << _encryption.MaxIVLength() << ", input was " << keyDecStr.size() << ")";
+    std::string msg = sstr.str();
     std::cerr << msg << std::endl;
-    throw std::invalid_argument(msg.data());
+    throw std::invalid_argument(msg);
   }
 
   _encryption.SetKeyWithIV(

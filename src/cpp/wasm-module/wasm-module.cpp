@@ -1,5 +1,6 @@
 
 #include "../DiffieHellmanClient.hpp"
+#include "../HashDrbgRandomGenerator.hpp"
 #include "../AutoSeededRandomPool.hpp"
 #include "../AesSymmetricCipher.hpp"
 #include "../KeyDerivationScheme.hpp"
@@ -14,6 +15,11 @@ EMSCRIPTEN_BINDINGS(my_namespace) {
   emscripten::class_<AutoSeededRandomPool>("AutoSeededRandomPoolJs")
     .constructor()
     .function("getRandomHexStr", &AutoSeededRandomPool::getRandomHexStr)
+    ;
+
+  emscripten::class_<HashDrbgRandomGenerator>("HashDrbgRandomGeneratorJs")
+    .constructor<std::string, std::string, std::string>()
+    .function("getRandomHexStr", &HashDrbgRandomGenerator::getRandomHexStr)
     ;
 
 
@@ -38,10 +44,12 @@ EMSCRIPTEN_BINDINGS(my_namespace) {
 
   emscripten::class_<RSAPrivateKey>("RSAPrivateKeyJs")
     .constructor()
-    .function("generateRandomWithKeySize", &RSAPrivateKey::generateRandomWithKeySize)
+    .function("generateRandomWithKeySizeUsingAutoSeeded", &RSAPrivateKey::generateRandomWithKeySizeUsingAutoSeeded)
+    .function("generateRandomWithKeySizeUsingHashDrbg", &RSAPrivateKey::generateRandomWithKeySizeUsingHashDrbg)
     .function("loadFromPemString", &RSAPrivateKey::loadFromPemString)
     .function("getAsPemString", &RSAPrivateKey::getAsPemString)
-    .function("signFromHexStrToHexStr", &RSAPrivateKey::signFromHexStrToHexStr)
+    .function("signFromHexStrToHexStrUsingAutoSeeded", &RSAPrivateKey::signFromHexStrToHexStrUsingAutoSeeded)
+    .function("signFromHexStrToHexStrUsingHashDrbg", &RSAPrivateKey::signFromHexStrToHexStrUsingHashDrbg)
     ;
 
 
