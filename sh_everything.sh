@@ -123,7 +123,7 @@ cd $DIR_ROOT
 
 echo "building wasm module"
 
-make build_platform="web-wasm" build_mode="release" all -j8
+make build_mode="release" build_platform="web-wasm" all -j8
 
 #
 #

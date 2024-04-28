@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en-us">
+  <head>
+
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+
+    <title>Wasm Crypto++</title>
+
+    <style>
+      body, p, h1, h2, h3 {
+        background-color: #0F0F0F;
+        color: #8F8F8F;
+        border: 0px 0px 0px 0px;
+        margin: 0px 0px 0px 0px;
+        padding: 0px 0px 0px 0px;
+        font-family: arial;
+      }
+
+      #top-description {
+        text-align: center;
+      }
+
+      .redText {
+        color: #C88;
+      }
+
+      #loggerOutput {
+        max-width: 1000px;
+        min-width: 300px;
+        margin: 0px auto;
+        padding: 0px none;
+        border: 1px solid;
+        padding: 0px none;
+        background-color: black;
+        border-color: rgb(64, 64, 64);
+      }
+
+      #loggerOutput p {
+        color: rgb(200, 200, 200);
+        font-family: 'Lucida Console', Monaco, monospace;
+      }
+
+    </style>
+
+    <script type="module" src="./dist/main.js"></script>
+  </head>
+  <body>
+
+    <div id="top-description">
+      <h1>Lib Crypto++ as a WebAssembly Browser Module</h1>
+      <h2>C++ Open Source Cryptography Inside Browsers</h2>
+      <h3>
+        <span class="redText">(Source Code: <a class="redText" href="https://github.com/GuillaumeBouchetEpitech/wasm-cryptopp-as-module">GitHub link</a>)</span>
+      </h3>
+    </div>
+
+    <div id="loggerOutput" contenteditable="true"></div>
+
+  </body>
+</html>

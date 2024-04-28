@@ -76,7 +76,7 @@ class TestClient {
     }
   }
 
-  setupEncryption(inputPassword: string) {
+  setupEncryption_step1(inputPassword: string) {
 
     this._data.password = inputPassword;
 
@@ -84,7 +84,7 @@ class TestClient {
 
     const mySalt = "my salt";
     const myINfo = "my info";
-    const k_size = 332;
+    const k_size = 128 + 128 + 128 + 32;
 
     this._data.derivedKey = wasmModule.deriveSha256HexStrKeyFromHexStrData(
       this._data.password, mySalt, myINfo, k_size
@@ -92,10 +92,10 @@ class TestClient {
 
     // use derived key deterministic random generator
 
-    this._data.entropy = this._data.derivedKey.slice(0, 100);
-    this._data.nonce = this._data.derivedKey.slice(100, 200);
-    this._data.personalization = this._data.derivedKey.slice(200, 300);
-    this._data.ivValue = this._data.derivedKey.slice(300, 332);
+    this._data.entropy /*****/ = this._data.derivedKey.slice(128 * 0, 128 * 1);
+    this._data.nonce /*******/ = this._data.derivedKey.slice(128 * 1, 128 * 2);
+    this._data.personalization = this._data.derivedKey.slice(128 * 2, 128 * 3);
+    this._data.ivValue /*****/ = this._data.derivedKey.slice(128 * 3, 128 * 3 + 32);
 
     if (this._prng) {
       this._prng.delete();
@@ -104,8 +104,8 @@ class TestClient {
 
     this._prng = new wasmModule.HashDrbgRandomGeneratorJs(this._data.entropy, this._data.nonce, this._data.personalization);
 
-    // use random generator to generate private/public RSA keys
-
+    // generate private/public RSA keys
+    // -> rely on the deterministic random generator
 
     if (this._privateKey) {
       this._privateKey.delete();
@@ -124,33 +124,16 @@ class TestClient {
     this._data.publicKeyPem = this._privateKey.getAsPemString();
 
     // start a Diffie Hellman client
-  }
-
-  startEncryption_step1(): string
-  {
-    if (!this._prng) {
-      throw new Error(`no _prng yet`);
-    }
-    if (!this._privateKey) {
-      throw new Error(`no _privateKey yet`);
-    }
 
     if (this._dhClient) {
       this._dhClient.delete();
       this._dhClient = undefined;
     }
     this._dhClient = new wasmModule.DiffieHellmanClientJs();
-    this._dhClient.generateKeys(localP, localQ, localG);
+    this._dhClient.generateRandomKeysSimpler();
     this._data.dhPublicKey = this._dhClient.getPublicKeyAsHexStr();
 
     this._data.dhSignedPublicKey = this._privateKey.signFromHexStrToHexStrUsingHashDrbg(this._prng, this._data.dhPublicKey);
-    return this._data.dhSignedPublicKey;
-  }
-
-  getSignedPublicKeyAsHexStr(): string {
-    if (!this._data.dhSignedPublicKey) {
-      throw new Error(`no _data.dhSignedPublicKey yet`);
-    }
     return this._data.dhSignedPublicKey;
   }
 
@@ -179,6 +162,13 @@ class TestClient {
     }
     this._cipher = new wasmModule.AesSymmetricCipherJs();
     this._cipher.initializeFromHexStr(actualKey, this._data.ivValue);
+  }
+
+  getSignedPublicKeyAsHexStr(): string {
+    if (!this._data.dhSignedPublicKey) {
+      throw new Error(`no _data.dhSignedPublicKey yet`);
+    }
+    return this._data.dhSignedPublicKey;
   }
 
   encryptStrToHexStr(message: string): string
@@ -229,11 +219,8 @@ describe("StationToStationProtocol.spec", () => {
       //
       //
 
-      clientA.setupEncryption(passwordA);
-      clientB.setupEncryption(passwordA);
-
-      clientA.startEncryption_step1();
-      clientB.startEncryption_step1();
+      clientA.setupEncryption_step1(passwordA);
+      clientB.setupEncryption_step1(passwordA);
 
       // equals (-> the determistic data that is never shared)
       expect(clientA._data.password).toEqual(passwordA);
@@ -281,11 +268,8 @@ describe("StationToStationProtocol.spec", () => {
       const backupTest1ClientA = JSON.parse(JSON.stringify(clientA._data)) as TestClientData;
       const backupTest1ClientB = JSON.parse(JSON.stringify(clientB._data)) as TestClientData;
 
-      clientA.setupEncryption(passwordA);
-      clientB.setupEncryption(passwordA);
-
-      clientA.startEncryption_step1();
-      clientB.startEncryption_step1();
+      clientA.setupEncryption_step1(passwordA);
+      clientB.setupEncryption_step1(passwordA);
 
       // equals (-> the determistic data that is never shared)
       expect(clientA._data.password).toEqual(passwordA);
@@ -352,11 +336,8 @@ describe("StationToStationProtocol.spec", () => {
       const backupTest2ClientA = JSON.parse(JSON.stringify(clientA._data)) as TestClientData;
       const backupTest2ClientB = JSON.parse(JSON.stringify(clientB._data)) as TestClientData;
 
-      clientA.setupEncryption(passwordB);
-      clientB.setupEncryption(passwordB);
-
-      clientA.startEncryption_step1();
-      clientB.startEncryption_step1();
+      clientA.setupEncryption_step1(passwordB);
+      clientB.setupEncryption_step1(passwordB);
 
       // equals
       expect(clientA._data.password).toEqual(passwordB);

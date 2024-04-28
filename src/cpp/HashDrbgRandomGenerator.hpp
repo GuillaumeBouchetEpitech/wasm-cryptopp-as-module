@@ -1,9 +1,6 @@
 
 #pragma once
 
-// #include "osrng.h"
-// // CryptoPP::AutoSeededRandomPool
-
 #include "drbg.h"
 // CryptoPP::Hash_DRBG
 

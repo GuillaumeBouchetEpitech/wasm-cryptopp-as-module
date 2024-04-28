@@ -34,7 +34,8 @@ EMSCRIPTEN_BINDINGS(my_namespace) {
 
   emscripten::class_<DiffieHellmanClient>("DiffieHellmanClientJs")
     .constructor()
-    .function("generateKeys", &DiffieHellmanClient::generateKeys)
+    .function("generateRandomKeysSimpler", &DiffieHellmanClient::generateRandomKeysSimpler)
+    .function("generateRandomKeys", &DiffieHellmanClient::generateRandomKeys)
     .function("computeSharedSecretFromHexStr", &DiffieHellmanClient::computeSharedSecretFromHexStr)
     .function("getPublicKeyAsHexStr", &DiffieHellmanClient::getPublicKeyAsHexStr)
     .function("getSharedSecretAsHexStr", &DiffieHellmanClient::getSharedSecretAsHexStr)

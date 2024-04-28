@@ -39,11 +39,13 @@ describe("DiffieHellmanClientJs", () => {
 
     test('two clients can obtain a common secret without sharing it', async () => {
 
+      const prngA = new wasmModule.AutoSeededRandomPoolJs();
+
       const clientA = new wasmModule!.DiffieHellmanClientJs();
       const clientB = new wasmModule!.DiffieHellmanClientJs();
 
-      clientA.generateKeys(localP, localQ, localG);
-      clientB.generateKeys(localP, localQ, localG);
+      clientA.generateRandomKeys(prngA, localP, localQ, localG);
+      clientB.generateRandomKeysSimpler();
 
       //
       //
@@ -90,7 +92,7 @@ describe("DiffieHellmanClientJs", () => {
 
       const allValues = new Set<string>();
       for (let ii = 0; ii < 50; ++ii) {
-        client.generateKeys(localP, localQ, localG);
+        client.generateRandomKeysSimpler();
         const publicKeyHexStr = client.getPublicKeyAsHexStr();
         expect(allValues.has(publicKeyHexStr)).toEqual(false);
         allValues.add(publicKeyHexStr);

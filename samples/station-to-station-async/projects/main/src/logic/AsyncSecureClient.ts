@@ -29,26 +29,6 @@ export type onLogCallback = (inLogMsg: string, inLogHeader?: string) => void;
 
 const password = "pineapple";
 
-const localP = [
-  "0xB10B8F96A080E01DDE92DE5EAE5D54EC52C99FBCFB06A3C6",
-  "9A6A9DCA52D23B616073E28675A23D189838EF1E2EE652C0",
-  "13ECB4AEA906112324975C3CD49B83BFACCBDD7D90C4BD70",
-  "98488E9C219A73724EFFD6FAE5644738FAA31A4FF55BCCC0",
-  "A151AF5F0DC8B4BD45BF37DF365C1A65E68CFDA76D4DA708",
-  "DF1FB2BC2E4A4371"
-].join("");
-
-const localQ = "0xF518AA8781A8DF278ABA4E7D64B7CB9D49462353";
-
-const localG = [
-  "0xA4D1CBD5C3FD34126765A442EFB99905F8104DD258AC507F",
-  "D6406CFF14266D31266FEA1E5C41564B777E690F5504F213",
-  "160217B4B01B886A5E91547F9E2749F4D7FBD7D3B9A92EE1",
-  "909D0D2263F80A76A6A24C087A091F531DBF0A0169B6A28A",
-  "D662A4D18E73AFA32D779D5918D08BC8858F4DCEF97C2A24",
-  "855E6EEB22B3B2E5"
-].join("");
-
 //
 //
 //
@@ -142,7 +122,7 @@ export class AsyncSecureClient {
     }
   }
 
-  async setupEncryption(inputPassword: string) {
+  async startEncryption_step1(inputPassword: string) {
 
     const wasmModule = CrytpoppWasmModule.get();
 
@@ -251,18 +231,15 @@ export class AsyncSecureClient {
       this._log(`Built (${endTime - startTime}ms)`);
       this._log("------------------------------------");
     }
-  }
 
-  async startEncryption_step1()
-  {
-    if (!this._prng) {
-      throw new Error(`no _prng yet`);
-    }
-    if (!this._privateKey) {
-      throw new Error(`no _privateKey yet`);
-    }
+    // if (!this._prng) {
+    //   throw new Error(`no _prng yet`);
+    // }
+    // if (!this._privateKey) {
+    //   throw new Error(`no _privateKey yet`);
+    // }
 
-    const wasmModule = CrytpoppWasmModule.get();
+    // const wasmModule = CrytpoppWasmModule.get();
 
     // start a Diffie Hellman client
 
@@ -281,7 +258,7 @@ export class AsyncSecureClient {
         this._dhClient = undefined;
       }
       this._dhClient = new wasmModule.DiffieHellmanClientJs();
-      this._dhClient.generateKeys(localP, localQ, localG);
+      this._dhClient.generateRandomKeysSimpler();
       this._data.dhPublicKey = this._dhClient.getPublicKeyAsHexStr();
 
       const endTime = Date.now();
@@ -412,8 +389,8 @@ export class AsyncSecureClient {
 
     this._EncryptedCommunicationState = EncryptedCommunicationState.initiated;
 
-    await this.setupEncryption(password);
-    await this.startEncryption_step1();
+    // await this.setupEncryption(password);
+    await this.startEncryption_step1(password);
     // this._generateDiffieHellmanKeys();
 
     // const wasmModule = CrytpoppWasmModule.get();
@@ -555,8 +532,8 @@ export class AsyncSecureClient {
 
         // this._ivValue = jsonPayload.ivValue;
 
-        await this.setupEncryption(password);
-        await this.startEncryption_step1();
+        // await this.setupEncryption(password);
+        await this.startEncryption_step1(password);
 
         const payloadObject: SecurityPayload = {
           signedPublicKey: this.getSignedPublicKeyAsHexStr()

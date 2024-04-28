@@ -15,7 +15,8 @@ declare module wasmCryptoppJs {
   class DiffieHellmanClientJs {
     constructor();
     delete(): void;
-    generateKeys(p: string, q: string, g: string): void;
+    generateRandomKeysSimpler(): void;
+    generateRandomKeys(rng: AutoSeededRandomPoolJs, p: string, q: string, g: string): void;
     computeSharedSecretFromHexStr(inHexStr: string): void;
     getPublicKeyAsHexStr(): string;
     getSharedSecretAsHexStr(): string;

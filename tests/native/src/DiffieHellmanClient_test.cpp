@@ -36,11 +36,13 @@ namespace {
 
 TEST(DiffieHellmanClient_test, success_test) {
 
+  AutoSeededRandomPool prngA;
+
   DiffieHellmanClient clientA;
-  clientA.generateKeys(tmpP, tmpQ, tmpG);
+  clientA.generateRandomKeys(prngA, tmpP, tmpQ, tmpG);
 
   DiffieHellmanClient clientB;
-  clientB.generateKeys(tmpP, tmpQ, tmpG);
+  clientB.generateRandomKeysSimpler();
 
   clientA.computeSharedSecretFromHexStr(clientB.getPublicKeyAsHexStr());
   clientB.computeSharedSecretFromHexStr(clientA.getPublicKeyAsHexStr());
@@ -56,7 +58,7 @@ TEST(DiffieHellmanClient_test, failure_with_garbage_as_public_key) {
   const std::string garbageStr = prng.getRandomHexStr(k_garbageSize);
 
   DiffieHellmanClient client;
-  client.generateKeys(tmpP, tmpQ, tmpG);
+  client.generateRandomKeysSimpler();
 
   //
   //

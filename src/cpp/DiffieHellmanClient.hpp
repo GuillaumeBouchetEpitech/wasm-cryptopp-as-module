@@ -1,8 +1,7 @@
 
 #pragma once
 
-#include "integer.h"
-// CryptoPP::Integer
+#include "AutoSeededRandomPool.hpp"
 
 #include "dh.h"
 // CryptoPP::DH
@@ -22,7 +21,8 @@ public:
 	DiffieHellmanClient() = default;
 
 public:
-	void generateKeys(const std::string& inP, const std::string& inQ, const std::string& inG);
+	void generateRandomKeysSimpler();
+	void generateRandomKeys(AutoSeededRandomPool& rng, const std::string& inP, const std::string& inQ, const std::string& inG);
 
 public:
 	void computeSharedSecretFromHexStr(const std::string& inHexOtherPublic);

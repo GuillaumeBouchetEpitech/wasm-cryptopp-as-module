@@ -15,27 +15,6 @@
 
 namespace {
 
-  // RFC 5114, 1024-bit MODP Group with 160-bit Prime Order Subgroup
-  // http://tools.ietf.org/html/rfc5114#section-2.1
-  const std::string tmpP =
-    "0xB10B8F96A080E01DDE92DE5EAE5D54EC52C99FBCFB06A3C6"
-    "9A6A9DCA52D23B616073E28675A23D189838EF1E2EE652C0"
-    "13ECB4AEA906112324975C3CD49B83BFACCBDD7D90C4BD70"
-    "98488E9C219A73724EFFD6FAE5644738FAA31A4FF55BCCC0"
-    "A151AF5F0DC8B4BD45BF37DF365C1A65E68CFDA76D4DA708"
-    "DF1FB2BC2E4A4371";
-
-  const std::string tmpQ =
-    "0xF518AA8781A8DF278ABA4E7D64B7CB9D49462353";
-
-  const std::string tmpG =
-    "0xA4D1CBD5C3FD34126765A442EFB99905F8104DD258AC507F"
-    "D6406CFF14266D31266FEA1E5C41564B777E690F5504F213"
-    "160217B4B01B886A5E91547F9E2749F4D7FBD7D3B9A92EE1"
-    "909D0D2263F80A76A6A24C087A091F531DBF0A0169B6A28A"
-    "D662A4D18E73AFA32D779D5918D08BC8858F4DCEF97C2A24"
-    "855E6EEB22B3B2E5";
-
   //
   //
   //
@@ -77,7 +56,7 @@ namespace {
     DiffieHellmanClient _dhClient;
     AesSymmetricCipher _cipher;
 
-    void setupEncryption(const std::string_view inputPassword)
+    void setupEncryption_step1(const std::string_view inputPassword)
     {
       _data.password = inputPassword;
 
@@ -85,16 +64,16 @@ namespace {
 
       const std::string mySalt = "my salt";
       const std::string myINfo = "my info";
-      constexpr int k_size = 316;
+      constexpr int k_size = 128 *3 + 16;
 
       _data.derivedKey = deriveSha256HexStrKeyFromHexStrData(_data.password, mySalt, myINfo, k_size);
 
       // use derived key deterministic random generator
 
-      _data.entropy = _data.derivedKey.substr(0, 100);
-      _data.nonce = _data.derivedKey.substr(100, 100);
-      _data.personalization = _data.derivedKey.substr(200, 100);
-      _data.ivValue = _data.derivedKey.substr(300, 32);
+      _data.entropy = /*****/ _data.derivedKey.substr(128 * 0, 128);
+      _data.nonce = /*******/ _data.derivedKey.substr(128 * 1, 128);
+      _data.personalization = _data.derivedKey.substr(128 * 2, 128);
+      _data.ivValue = /*****/ _data.derivedKey.substr(128 * 3, 32);
 
       _prng = std::make_unique<HashDrbgRandomGenerator>(_data.entropy, _data.nonce, _data.personalization);
 
@@ -108,17 +87,13 @@ namespace {
 
       // start a Diffie Hellman client
 
-      _dhClient.generateKeys(tmpP, tmpQ, tmpG);
+      _dhClient.generateRandomKeysSimpler();
       _data.dhPublicKey = _dhClient.getPublicKeyAsHexStr();
 
       _data.dhSignedPublicKey = _privateKey.signFromHexStrToHexStrUsingHashDrbg(*_prng, _data.dhPublicKey);
     }
 
-    const std::string& getSignedPublicKeyAsHexStr() {
-      return _data.dhSignedPublicKey;
-    }
-
-    void syncWithOtherClient(const std::string& otherClientSignedPublicKey) {
+    void syncWithOtherClient_step2(const std::string& otherClientSignedPublicKey) {
       const std::string otherClientPublicKey = _publicKey.verifyFromHexStrToHexStr(otherClientSignedPublicKey);
 
       _dhClient.computeSharedSecretFromHexStr(otherClientPublicKey);
@@ -128,6 +103,10 @@ namespace {
       const std::string actualKey = _data.sharedSecret.substr(0, 64);
 
       _cipher.initializeFromHexStr(actualKey, _data.ivValue);
+    }
+
+    const std::string& getSignedPublicKeyAsHexStr() {
+      return _data.dhSignedPublicKey;
     }
 
     std::string encryptStrToHexStr(const std::string& message)
@@ -175,8 +154,8 @@ TEST(StationToStationProtocol_test, basic_setup) {
   //
   //
 
-  clientA.setupEncryption(passwordA);
-  clientB.setupEncryption(passwordA);
+  clientA.setupEncryption_step1(passwordA);
+  clientB.setupEncryption_step1(passwordA);
 
   // equals (-> the determistic data that is never shared)
   ASSERT_EQ(clientA._data.password, passwordA);
@@ -190,8 +169,8 @@ TEST(StationToStationProtocol_test, basic_setup) {
   // but in reality:
   // => clientA send the [SignedPublicKeyAsHexStr] to clientB
   // => clientB send the [SignedPublicKeyAsHexStr] to clientA
-  clientA.syncWithOtherClient(clientB.getSignedPublicKeyAsHexStr());
-  clientB.syncWithOtherClient(clientA.getSignedPublicKeyAsHexStr());
+  clientA.syncWithOtherClient_step2(clientB.getSignedPublicKeyAsHexStr());
+  clientB.syncWithOtherClient_step2(clientA.getSignedPublicKeyAsHexStr());
 
   // equals
   ASSERT_EQ(clientA._data.sharedSecret, clientB._data.sharedSecret);
@@ -228,8 +207,8 @@ TEST(StationToStationProtocol_test, basic_setup) {
   TestClientData backupTest1ClientA = clientA._data;
   TestClientData backupTest1ClientB = clientB._data;
 
-  clientA.setupEncryption(passwordA);
-  clientB.setupEncryption(passwordA);
+  clientA.setupEncryption_step1(passwordA);
+  clientB.setupEncryption_step1(passwordA);
 
   // equals (-> the determistic data that is never shared)
   ASSERT_EQ(clientA._data.password, passwordA);
@@ -243,8 +222,8 @@ TEST(StationToStationProtocol_test, basic_setup) {
   // but in reality:
   // => clientA send the [SignedPublicKeyAsHexStr] to clientB
   // => clientB send the [SignedPublicKeyAsHexStr] to clientA
-  clientA.syncWithOtherClient(clientB.getSignedPublicKeyAsHexStr());
-  clientB.syncWithOtherClient(clientA.getSignedPublicKeyAsHexStr());
+  clientA.syncWithOtherClient_step2(clientB.getSignedPublicKeyAsHexStr());
+  clientB.syncWithOtherClient_step2(clientA.getSignedPublicKeyAsHexStr());
 
   // equals
   ASSERT_EQ(clientA._data.sharedSecret, clientB._data.sharedSecret);
@@ -300,8 +279,8 @@ TEST(StationToStationProtocol_test, basic_setup) {
   TestClientData backupTest2ClientA = clientA._data;
   TestClientData backupTest2ClientB = clientB._data;
 
-  clientA.setupEncryption(passwordB);
-  clientB.setupEncryption(passwordB);
+  clientA.setupEncryption_step1(passwordB);
+  clientB.setupEncryption_step1(passwordB);
 
   // equals
   ASSERT_EQ(clientA._data.password, passwordB);
@@ -315,8 +294,8 @@ TEST(StationToStationProtocol_test, basic_setup) {
   // but in reality:
   // => clientA send the [SignedPublicKeyAsHexStr] to clientB
   // => clientB send the [SignedPublicKeyAsHexStr] to clientA
-  clientA.syncWithOtherClient(clientB.getSignedPublicKeyAsHexStr());
-  clientB.syncWithOtherClient(clientA.getSignedPublicKeyAsHexStr());
+  clientA.syncWithOtherClient_step2(clientB.getSignedPublicKeyAsHexStr());
+  clientB.syncWithOtherClient_step2(clientA.getSignedPublicKeyAsHexStr());
 
   // equals
   ASSERT_EQ(clientA._data.sharedSecret, clientB._data.sharedSecret);

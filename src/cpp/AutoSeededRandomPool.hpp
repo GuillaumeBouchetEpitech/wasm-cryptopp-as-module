@@ -8,11 +8,13 @@
 
 // forward declaration
 class RSAPrivateKey;
+class DiffieHellmanClient;
 
 class AutoSeededRandomPool
 {
 
   friend RSAPrivateKey;
+  friend DiffieHellmanClient;
 
 public:
   AutoSeededRandomPool();

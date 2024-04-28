@@ -1,0 +1,10 @@
+{
+    "extends": "../../../base-tsconfig.json",
+    "compilerOptions": {
+        "lib": ["esnext", "webworker"]
+    },
+    "include": [
+        "./src/main.ts",
+        "../../../_common/indexWorker.ts"
+    ]
+}
