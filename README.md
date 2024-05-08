@@ -42,13 +42,16 @@ It should be possible to expose most Crypto++ capabilities.
 
 **`/!\ important /!\`**
 
-## Demo 1 (async version):
-http://guillaumebouchetepitech.github.io/wasm-cryptopp-as-module/samples/interactive-async/index.html
+## Demo 1: Password Based End To End Encryption
+http://guillaumebouchetepitech.github.io/wasm-cryptopp-as-module/samples/end-to-end-encrypted-connection-async/index.html
 
-## Demo 1 (sync version):
-http://guillaumebouchetepitech.github.io/wasm-cryptopp-as-module/samples/interactive/index.html
+## Demo 2: Derive RSA Keys
+http://guillaumebouchetepitech.github.io/wasm-cryptopp-as-module/samples/derive-rsa-keys-async/index.html
 
-## Demo 2:
+## Demo 3: Diffie Hellman key exchange
+http://guillaumebouchetepitech.github.io/wasm-cryptopp-as-module/samples/diffie-hellman-key-exchange-async/index.html
+
+## Demo 4: All Features
 http://guillaumebouchetepitech.github.io/wasm-cryptopp-as-module/samples/basic/index.html
 
 **`/!\ important /!\`**
