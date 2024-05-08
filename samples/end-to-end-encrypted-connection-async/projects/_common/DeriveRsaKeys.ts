@@ -42,6 +42,7 @@ export interface IMsgDeriveRsaKeys_response {
   elapsedTime: number;
   privateKeyPem: string;
   publicKeyPem: string;
+  ivValue: string;
 };
 
 //

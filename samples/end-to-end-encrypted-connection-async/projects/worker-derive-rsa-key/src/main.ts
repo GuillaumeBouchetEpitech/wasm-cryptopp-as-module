@@ -4,6 +4,7 @@
 
 declare var self: WorkerGlobalScope & typeof globalThis;
 
+import { CrytpoppWasmModule } from "@local-worker-framework";
 import { DeriveRsaKeys } from "../../_common/index";
 import * as strategies from "./strategies";
 
@@ -34,6 +35,13 @@ self.onmessage = async (event: any) => {
         self.postMessage({ success: true, response });
 
     } catch (err) {
+
+        if (typeof(err) === 'number') {
+            const wasmModule = CrytpoppWasmModule.get()
+            const errMsg = wasmModule.getExceptionMessage(err);
+            err = new Error(errMsg);
+        }
+
         console.log("worker: on reply error");
         console.log("type", event.data.type);
         console.log("response.error", err);

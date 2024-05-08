@@ -211,6 +211,7 @@ class DiffieHellmanWorker {
             throw new Error(message.response.error);
         }
         this._publicKey = message.response.publicKey;
+        return message.response.elapsedTime;
     }
     async computeDiffieHellmanSharedSecret(publicKey) {
         if (!this._workerInstance) {
@@ -224,285 +225,13 @@ class DiffieHellmanWorker {
             throw new Error(message.response.error);
         }
         this._sharedSecret = message.response.sharedSecret;
+        return message.response.elapsedTime;
     }
     get publicKey() {
         return this._publicKey;
     }
     get sharedSecret() {
         return this._sharedSecret;
-    }
-}
-
-var MessageTypes;
-(function (MessageTypes) {
-    MessageTypes["PlainMessage"] = "PlainMessage";
-    MessageTypes["EncryptedMessage"] = "EncryptedMessage";
-    MessageTypes["SecurityRequest"] = "SecurityRequest";
-    MessageTypes["SecurityResponse"] = "SecurityResponse";
-})(MessageTypes || (MessageTypes = {}));
-const isMessage = (inValue) => {
-    return (typeof (inValue) === 'object' &&
-        typeof (inValue.type) === 'string' &&
-        typeof (inValue.payload) === 'string');
-};
-var EncryptedCommunicationState;
-(function (EncryptedCommunicationState) {
-    EncryptedCommunicationState[EncryptedCommunicationState["unencrypted"] = 0] = "unencrypted";
-    EncryptedCommunicationState[EncryptedCommunicationState["initiated"] = 1] = "initiated";
-    EncryptedCommunicationState[EncryptedCommunicationState["ready"] = 2] = "ready";
-    EncryptedCommunicationState[EncryptedCommunicationState["confirmed"] = 3] = "confirmed";
-})(EncryptedCommunicationState || (EncryptedCommunicationState = {}));
-const isSecurityResponsePayload = (inValue) => {
-    return (typeof (inValue) === 'object' &&
-        typeof (inValue.publicKey) === 'string');
-};
-const isSecurityRequestPayload = (inValue) => {
-    return (isSecurityResponsePayload(inValue) &&
-        typeof (inValue.ivValue) === 'string');
-};
-
-const getRandomHexStr = (inSize) => {
-    const wasmModule = CrytpoppWasmModule.get();
-    const prng = new wasmModule.AutoSeededRandomPoolJs();
-    const randomHexStr = prng.getRandomHexStr(inSize);
-    prng.delete();
-    return randomHexStr;
-};
-
-const printHexadecimalStrings = (onLogging, inHexStr, inStep) => {
-    const strSize = inHexStr.length.toString();
-    let index = 0;
-    while (index < inHexStr.length) {
-        const currLine = inHexStr.substr(index, inStep);
-        let currText = currLine;
-        if (index > 0) {
-            currText = currText.padEnd(inStep, '_');
-        }
-        onLogging(` => {${index.toString().padStart(3, '_')} / ${strSize}} ${currText}`);
-        index += inStep;
-    }
-};
-
-//
-//
-//
-//
-//
-//
-class AsyncSecureClient {
-    _wasDeleted = false;
-    _communication;
-    _EncryptedCommunicationState = EncryptedCommunicationState.unencrypted;
-    _onReceiveCallbacks = [];
-    _onLogging;
-    _workerObtainCipherKey;
-    _publicKey;
-    _ivValue;
-    _sharedSecret;
-    _aesSymmetricCipher;
-    constructor(inCommunication, inOnLogging) {
-        this._communication = inCommunication;
-        this._onLogging = inOnLogging;
-        const wasmModule = CrytpoppWasmModule.get();
-        this._aesSymmetricCipher = new wasmModule.AesSymmetricCipherJs();
-        this._communication.onReceive(async (inMsg) => {
-            await this._processReceivedMessage(inMsg);
-        });
-    }
-    async initialize() {
-        await this._initializeDiffieHellmanWorker();
-    }
-    delete() {
-        this._aesSymmetricCipher.delete();
-        this._workerObtainCipherKey?.dispose();
-        this._wasDeleted = true;
-    }
-    async makeSecure() {
-        if (this._wasDeleted) {
-            throw new Error("was deleted");
-        }
-        if (!this._workerObtainCipherKey) {
-            throw new Error("worker not initialized");
-        }
-        this._log("now securing the connection");
-        this._EncryptedCommunicationState = EncryptedCommunicationState.initiated;
-        await this._generateDiffieHellmanKeys();
-        this._ivValue = getRandomHexStr(16);
-        this._log(`message.response.ivValue`);
-        printHexadecimalStrings(this._log.bind(this), this._ivValue, 64);
-        const payload = JSON.stringify({
-            publicKey: this._publicKey,
-            ivValue: this._ivValue,
-        });
-        this._communication.send(JSON.stringify({ type: MessageTypes.SecurityRequest, payload }));
-    }
-    send(inText) {
-        if (this._wasDeleted) {
-            throw new Error("was deleted");
-        }
-        if (this._EncryptedCommunicationState === EncryptedCommunicationState.initiated) {
-            throw new Error("cannot send while securing the connection");
-        }
-        if (this._EncryptedCommunicationState === EncryptedCommunicationState.unencrypted) {
-            this._log(`sending a message:`, "[unencrypted]");
-            this._log(`"${inText}"`, "[unencrypted]");
-            this._communication.send(JSON.stringify({ type: MessageTypes.PlainMessage, payload: (inText) }));
-        }
-        else {
-            this._log(`sending a message:`, "[encrypted]");
-            this._log(`"${inText}"`, "[encrypted]");
-            this._log(`encrypting`, "[encrypted]");
-            const startTime = Date.now();
-            const wasmModule = CrytpoppWasmModule.get();
-            const textAshex = wasmModule.utf8ToHex(inText);
-            const encrypted = this._aesSymmetricCipher.encryptFromHexStrAsHexStr(textAshex);
-            const endTime = Date.now();
-            this._log(`encrypted (${endTime - startTime}ms)`, "[encrypted]");
-            this._communication.send(JSON.stringify({ type: MessageTypes.EncryptedMessage, payload: encrypted }));
-        }
-    }
-    onReceive(inCallback) {
-        if (this._wasDeleted) {
-            throw new Error("was deleted");
-        }
-        this._onReceiveCallbacks.push(inCallback);
-    }
-    get EncryptedCommunicationState() {
-        if (this._wasDeleted) {
-            throw new Error("was deleted");
-        }
-        return this._EncryptedCommunicationState;
-    }
-    async _initializeDiffieHellmanWorker() {
-        this._workerObtainCipherKey = new DiffieHellmanWorker();
-        await this._workerObtainCipherKey.initialize();
-    }
-    async _processReceivedMessage(inText) {
-        if (this._wasDeleted) {
-            throw new Error("was deleted");
-        }
-        const jsonMsg = JSON.parse(inText);
-        if (!isMessage(jsonMsg)) {
-            throw new Error("received message structure unrecognized");
-        }
-        this._log(`received message, type: "${jsonMsg.type}"`);
-        switch (jsonMsg.type) {
-            case MessageTypes.PlainMessage:
-                {
-                    this._onReceiveCallbacks.forEach((callback) => callback(jsonMsg.payload));
-                    break;
-                }
-            case MessageTypes.EncryptedMessage:
-                {
-                    this._log("decrypting");
-                    const startTime = Date.now();
-                    const recovered = this._aesSymmetricCipher.decryptFromHexStrAsHexStr(jsonMsg.payload);
-                    const wasmModule = CrytpoppWasmModule.get();
-                    const plainText = wasmModule.hexToUtf8(recovered);
-                    const endTime = Date.now();
-                    this._log(`decrypted (${endTime - startTime}ms)`);
-                    if (this._EncryptedCommunicationState === EncryptedCommunicationState.ready) {
-                        this._log("connection now confirmed secure");
-                        this._EncryptedCommunicationState = EncryptedCommunicationState.confirmed;
-                    }
-                    else if (this._EncryptedCommunicationState !== EncryptedCommunicationState.confirmed) {
-                        throw new Error("was expecting to be in a secure state");
-                    }
-                    this._onReceiveCallbacks.forEach((callback) => callback(plainText));
-                    break;
-                }
-            case MessageTypes.SecurityRequest:
-                {
-                    this._log("now securing the connection");
-                    this._EncryptedCommunicationState = EncryptedCommunicationState.initiated;
-                    const jsonPayload = JSON.parse(jsonMsg.payload);
-                    if (!isSecurityRequestPayload(jsonPayload)) {
-                        throw new Error("received message security request payload unrecognized");
-                    }
-                    this._ivValue = jsonPayload.ivValue;
-                    await this._generateDiffieHellmanKeys();
-                    await this._computeDiffieHellmanSharedSecret(jsonPayload.publicKey);
-                    await this._initializeAesSymmetricCipher();
-                    this._log("sending public key");
-                    this._EncryptedCommunicationState = EncryptedCommunicationState.ready;
-                    const payload = JSON.stringify({
-                        publicKey: this._publicKey,
-                    });
-                    this._communication.send(JSON.stringify({ type: MessageTypes.SecurityResponse, payload }));
-                    break;
-                }
-            case MessageTypes.SecurityResponse:
-                {
-                    this._log("processing received security response");
-                    if (this._EncryptedCommunicationState !== EncryptedCommunicationState.initiated) {
-                        throw new Error("was expecting a security response");
-                    }
-                    this._log("computing the shared secret with the received public key");
-                    const jsonPayload = JSON.parse(jsonMsg.payload);
-                    if (!isSecurityResponsePayload(jsonPayload)) {
-                        throw new Error("received message security response payload unrecognized");
-                    }
-                    await this._computeDiffieHellmanSharedSecret(jsonPayload.publicKey);
-                    await this._initializeAesSymmetricCipher();
-                    this._log("connection now confirmed secure");
-                    this._EncryptedCommunicationState = EncryptedCommunicationState.ready;
-                    break;
-                }
-            default:
-                throw new Error(`received message type unsupported, type: "${jsonMsg.type}"`);
-        }
-    }
-    _log(inLogMsg, inLogHeader) {
-        if (this._onLogging) {
-            this._onLogging(inLogMsg, inLogHeader);
-        }
-    }
-    async _generateDiffieHellmanKeys() {
-        this._log("------------------------------------");
-        this._log("Diffie Hellman Key Exchange");
-        this._log("generating public/private keys");
-        this._log("2048-bit MODP Group with 256-bit Prime Order Subgroup");
-        if (!this._workerObtainCipherKey) {
-            throw new Error("worker not initialized");
-        }
-        await this._workerObtainCipherKey.generateDiffieHellmanKeys();
-        this._publicKey = this._workerObtainCipherKey.publicKey;
-        this._log(`this._publicKey`);
-        printHexadecimalStrings(this._log.bind(this), this._publicKey, 64);
-        // this._log(`generated public/private keys (${message.response.elapsedTime}ms)`);
-        this._log("------------------------------------");
-    }
-    async _computeDiffieHellmanSharedSecret(publicKey) {
-        if (!this._workerObtainCipherKey) {
-            throw new Error("worker not initialized");
-        }
-        this._log(`input publicKey`);
-        printHexadecimalStrings(this._log.bind(this), publicKey, 64);
-        await this._workerObtainCipherKey.computeDiffieHellmanSharedSecret(publicKey);
-        this._sharedSecret = this._workerObtainCipherKey.sharedSecret;
-        this._log(`this._sharedSecret`);
-        printHexadecimalStrings(this._log.bind(this), this._sharedSecret, 64);
-    }
-    async _initializeAesSymmetricCipher() {
-        if (!this._ivValue) {
-            throw new Error("iv value not initialized");
-        }
-        if (!this._sharedSecret) {
-            throw new Error("shared secret not initialized");
-        }
-        if (!this._workerObtainCipherKey) {
-            throw new Error("worker not initialized");
-        }
-        this._log("------------------------------------");
-        this._log("AES Symmetric Cipher");
-        this._log("initializing");
-        this._log("256bits key from computed shared secret");
-        const startTime = Date.now();
-        this._aesSymmetricCipher.initializeFromHexStr(this._sharedSecret.slice(0, 64), // 64hex -> 32bytes ->  256bits key
-        this._ivValue);
-        const endTime = Date.now();
-        this._log(`initialized (${endTime - startTime}ms)`);
-        this._log("------------------------------------");
     }
 }
 
@@ -550,6 +279,7 @@ class DeriveRsaKeysWorker {
     _secureContextId;
     _privateKeyPem;
     _publicKeyPem;
+    _ivValue;
     constructor() {
     }
     async initialize() {
@@ -578,6 +308,7 @@ class DeriveRsaKeysWorker {
         this._secureContextId = undefined;
         this._privateKeyPem = undefined;
         this._publicKeyPem = undefined;
+        this._ivValue = undefined;
     }
     async deriveRsaKeys(password, keySize) {
         if (!this._workerInstance) {
@@ -592,6 +323,7 @@ class DeriveRsaKeysWorker {
         }
         this._privateKeyPem = message.response.privateKeyPem;
         this._publicKeyPem = message.response.publicKeyPem;
+        this._ivValue = message.response.ivValue;
         return message.response.elapsedTime;
     }
     makeRsaKeyPair() {
@@ -608,6 +340,9 @@ class DeriveRsaKeysWorker {
     }
     get publicKeyPem() {
         return this._publicKeyPem;
+    }
+    get ivValue() {
+        return this._ivValue;
     }
 }
 //
@@ -634,6 +369,352 @@ class RsaKeyPair {
         const wasmModule = CrytpoppWasmModule.get();
         const verifiedHexPayload = this._publicKey.verifyFromHexStrToHexStr(signedHexStrPayload);
         return wasmModule.hexToUtf8(verifiedHexPayload);
+    }
+}
+
+var MessageTypes;
+(function (MessageTypes) {
+    MessageTypes["PlainMessage"] = "PlainMessage";
+    MessageTypes["EncryptedMessage"] = "EncryptedMessage";
+    MessageTypes["SecurityRequest"] = "SecurityRequest";
+    MessageTypes["SecurityResponse"] = "SecurityResponse";
+})(MessageTypes || (MessageTypes = {}));
+const isMessage = (inValue) => {
+    return (typeof (inValue) === 'object' &&
+        typeof (inValue.type) === 'string' &&
+        typeof (inValue.payload) === 'string');
+};
+var EncryptedCommunicationState;
+(function (EncryptedCommunicationState) {
+    EncryptedCommunicationState[EncryptedCommunicationState["unencrypted"] = 0] = "unencrypted";
+    EncryptedCommunicationState[EncryptedCommunicationState["initiated"] = 1] = "initiated";
+    EncryptedCommunicationState[EncryptedCommunicationState["ready"] = 2] = "ready";
+    EncryptedCommunicationState[EncryptedCommunicationState["confirmed"] = 3] = "confirmed";
+})(EncryptedCommunicationState || (EncryptedCommunicationState = {}));
+const isSecurityResponsePayload = (inValue) => {
+    return (typeof (inValue) === 'object' &&
+        typeof (inValue.signedPublicKey) === 'string');
+};
+const isSecurityRequestPayload = (inValue) => {
+    return (isSecurityResponsePayload(inValue));
+};
+
+const printHexadecimalStrings = (onLogging, inHexStr, inStep) => {
+    const strSize = inHexStr.length.toString();
+    let index = 0;
+    while (index < inHexStr.length) {
+        const currLine = inHexStr.substr(index, inStep);
+        let currText = currLine;
+        if (index > 0) {
+            currText = currText.padEnd(inStep, '_');
+        }
+        onLogging(` => {${index.toString().padStart(3, '_')} / ${strSize}} ${currText}`);
+        index += inStep;
+    }
+};
+
+//
+//
+//
+//
+//
+//
+class AsyncSecureClient {
+    _wasDeleted = false;
+    _password;
+    _communication;
+    _EncryptedCommunicationState = EncryptedCommunicationState.unencrypted;
+    _onReceiveCallbacks = [];
+    _onLogging;
+    _diffieHellmanWorker;
+    _deriveRsaKeysWorker;
+    _rsaKeyPair;
+    _aesSymmetricCipher;
+    constructor(password, inCommunication, inOnLogging) {
+        this._password = password;
+        this._communication = inCommunication;
+        this._onLogging = inOnLogging;
+        const wasmModule = CrytpoppWasmModule.get();
+        this._aesSymmetricCipher = new wasmModule.AesSymmetricCipherJs();
+        this._communication.onReceive(async (inMsg) => {
+            await this._processReceivedClientMessage(inMsg);
+        });
+    }
+    async initialize() {
+        this._diffieHellmanWorker = new DiffieHellmanWorker();
+        this._deriveRsaKeysWorker = new DeriveRsaKeysWorker();
+        await Promise.all([
+            this._diffieHellmanWorker.initialize(),
+            this._deriveRsaKeysWorker.initialize(),
+        ]);
+    }
+    delete() {
+        this._aesSymmetricCipher.delete();
+        this._diffieHellmanWorker?.dispose();
+        this._deriveRsaKeysWorker?.dispose();
+        this._wasDeleted = true;
+    }
+    //region Make Secure
+    async makeSecure() {
+        if (this._wasDeleted) {
+            throw new Error("was deleted");
+        }
+        if (!this._diffieHellmanWorker) {
+            throw new Error("worker (workerObtainCipherKey) not initialized");
+        }
+        if (!this._deriveRsaKeysWorker) {
+            throw new Error("worker (deriveRsaKeysWorker) not initialized");
+        }
+        this._log("now securing the connection");
+        this._EncryptedCommunicationState = EncryptedCommunicationState.initiated;
+        // both can be inside a Promise.all([...])
+        // -> but since it would mess up the logs of this demo...
+        await this._generateDiffieHellmanKeys();
+        await this._deriveRsaKeys();
+        if (!this._diffieHellmanWorker.publicKey) {
+            throw new Error("no public key generated");
+        }
+        if (!this._deriveRsaKeysWorker.ivValue) {
+            throw new Error("no iv value generated");
+        }
+        // this._ivValue = getRandomHexStr(16);
+        this._log(`message.response.ivValue`);
+        printHexadecimalStrings(this._log.bind(this), this._deriveRsaKeysWorker.ivValue, 32);
+        if (!this._rsaKeyPair) {
+            throw new Error("Rsa Key Pair not initialized");
+        }
+        this._log("signing our public key for the peer");
+        const signedPublicKey = this._rsaKeyPair.signPayloadToHexStr(this._diffieHellmanWorker.publicKey);
+        this._log("sending our signed public key to the peer");
+        const payload = {
+            signedPublicKey: signedPublicKey,
+        };
+        this._communication.send(JSON.stringify({
+            type: MessageTypes.SecurityRequest,
+            payload: JSON.stringify(payload),
+        }));
+    }
+    //endregion Make Secure
+    send(inText) {
+        if (this._wasDeleted) {
+            throw new Error("was deleted");
+        }
+        if (this._EncryptedCommunicationState === EncryptedCommunicationState.initiated) {
+            throw new Error("cannot send while securing the connection");
+        }
+        if (this._EncryptedCommunicationState === EncryptedCommunicationState.unencrypted) {
+            this._log(`sending a message:`, "[unencrypted]");
+            this._log(`"${inText}"`, "[unencrypted]");
+            this._communication.send(JSON.stringify({ type: MessageTypes.PlainMessage, payload: (inText) }));
+        }
+        else {
+            this._log(`sending a message:`, "[encrypted]");
+            this._log(`"${inText}"`, "[encrypted]");
+            this._log(`encrypting`, "[encrypted]");
+            const startTime = Date.now();
+            const wasmModule = CrytpoppWasmModule.get();
+            const textAshex = wasmModule.utf8ToHex(inText);
+            const encrypted = this._aesSymmetricCipher.encryptFromHexStrAsHexStr(textAshex);
+            const endTime = Date.now();
+            this._log(`encrypted (${endTime - startTime}ms)`, "[encrypted]");
+            this._communication.send(JSON.stringify({ type: MessageTypes.EncryptedMessage, payload: encrypted }));
+        }
+    }
+    onReceive(inCallback) {
+        if (this._wasDeleted) {
+            throw new Error("was deleted");
+        }
+        this._onReceiveCallbacks.push(inCallback);
+    }
+    get EncryptedCommunicationState() {
+        if (this._wasDeleted) {
+            throw new Error("was deleted");
+        }
+        return this._EncryptedCommunicationState;
+    }
+    //region Process Message
+    async _processReceivedClientMessage(inText) {
+        if (this._wasDeleted) {
+            throw new Error("was deleted");
+        }
+        const jsonMsg = JSON.parse(inText);
+        if (!isMessage(jsonMsg)) {
+            throw new Error("received message structure unrecognized");
+        }
+        this._log(`received message, type: "${jsonMsg.type}"`);
+        switch (jsonMsg.type) {
+            case MessageTypes.PlainMessage:
+                {
+                    this._onReceiveCallbacks.forEach((callback) => callback(jsonMsg.payload));
+                    break;
+                }
+            case MessageTypes.EncryptedMessage:
+                {
+                    this._log("decrypting");
+                    const startTime = Date.now();
+                    const recovered = this._aesSymmetricCipher.decryptFromHexStrAsHexStr(jsonMsg.payload);
+                    const wasmModule = CrytpoppWasmModule.get();
+                    const plainText = wasmModule.hexToUtf8(recovered);
+                    const endTime = Date.now();
+                    this._log(`decrypted (${endTime - startTime}ms)`);
+                    if (this._EncryptedCommunicationState === EncryptedCommunicationState.ready) {
+                        this._log("connection now confirmed secure");
+                        this._EncryptedCommunicationState = EncryptedCommunicationState.confirmed;
+                    }
+                    else if (this._EncryptedCommunicationState !== EncryptedCommunicationState.confirmed) {
+                        throw new Error("was expecting to be in a secure state");
+                    }
+                    this._onReceiveCallbacks.forEach((callback) => callback(plainText));
+                    break;
+                }
+            case MessageTypes.SecurityRequest:
+                {
+                    this._log("now securing the connection");
+                    this._EncryptedCommunicationState = EncryptedCommunicationState.initiated;
+                    const jsonPayload = JSON.parse(jsonMsg.payload);
+                    if (!isSecurityRequestPayload(jsonPayload)) {
+                        throw new Error("received message security request payload unrecognized");
+                    }
+                    if (!this._diffieHellmanWorker) {
+                        throw new Error("worker (workerObtainCipherKey) not initialized");
+                    }
+                    // both can be inside a Promise.all([...])
+                    // -> but since it would mess up the logs of this demo...
+                    await this._deriveRsaKeys();
+                    await this._generateDiffieHellmanKeys();
+                    if (!this._rsaKeyPair) {
+                        throw new Error("Rsa Key Pair not initialized");
+                    }
+                    this._log("verifying signed public key from the peer");
+                    const verifiedPublicKey = this._rsaKeyPair.verifyHexStrPayloadToStr(jsonPayload.signedPublicKey);
+                    await this._computeDiffieHellmanSharedSecret(verifiedPublicKey);
+                    await this._initializeAesSymmetricCipher();
+                    this._EncryptedCommunicationState = EncryptedCommunicationState.ready;
+                    if (!this._diffieHellmanWorker.publicKey) {
+                        throw new Error("missing public key");
+                    }
+                    this._log("signing our public key for the peer");
+                    const signedPublicKey = this._rsaKeyPair.signPayloadToHexStr(this._diffieHellmanWorker.publicKey);
+                    this._log("sending our signed public key to the peer");
+                    const payload = {
+                        signedPublicKey: signedPublicKey,
+                    };
+                    this._communication.send(JSON.stringify({
+                        type: MessageTypes.SecurityResponse,
+                        payload: JSON.stringify(payload),
+                    }));
+                    break;
+                }
+            case MessageTypes.SecurityResponse:
+                {
+                    this._log("processing received security response");
+                    if (this._EncryptedCommunicationState !== EncryptedCommunicationState.initiated) {
+                        throw new Error("was expecting a security response");
+                    }
+                    this._log("computing the shared secret with the received public key");
+                    const jsonPayload = JSON.parse(jsonMsg.payload);
+                    if (!isSecurityResponsePayload(jsonPayload)) {
+                        throw new Error("received message security response payload unrecognized");
+                    }
+                    if (!this._rsaKeyPair) {
+                        throw new Error("Rsa Key Pair not initialized");
+                    }
+                    this._log("verifying signed public key of the peer");
+                    const verifiedPublicKey = this._rsaKeyPair.verifyHexStrPayloadToStr(jsonPayload.signedPublicKey);
+                    await this._computeDiffieHellmanSharedSecret(verifiedPublicKey);
+                    await this._initializeAesSymmetricCipher();
+                    this._log("connection now confirmed secure");
+                    this._EncryptedCommunicationState = EncryptedCommunicationState.ready;
+                    break;
+                }
+            default:
+                throw new Error(`received message type unsupported, type: "${jsonMsg.type}"`);
+        }
+    }
+    //endregion Process Message
+    _log(inLogMsg, inLogHeader) {
+        if (this._onLogging) {
+            this._onLogging(inLogMsg, inLogHeader);
+        }
+    }
+    //region Helpers
+    async _generateDiffieHellmanKeys() {
+        this._log("------------------------------------");
+        this._log("Diffie Hellman Key Exchange");
+        this._log("generating public/private keys");
+        this._log("2048-bit MODP Group with 256-bit Prime Order Subgroup");
+        if (!this._diffieHellmanWorker) {
+            throw new Error("worker (workerObtainCipherKey) not initialized");
+        }
+        const elapsed = await this._diffieHellmanWorker.generateDiffieHellmanKeys();
+        this._log(`diffieHellmanWorker.publicKey`);
+        printHexadecimalStrings(this._log.bind(this), this._diffieHellmanWorker.publicKey, 32);
+        this._log(`generated public/private keys (${elapsed}ms)`);
+        this._log("------------------------------------");
+    }
+    async _deriveRsaKeys() {
+        if (!this._deriveRsaKeysWorker) {
+            throw new Error("worker (deriveRsaKeysWorker) not initialized");
+        }
+        // const keySize = 1024 * 3; // actually safe
+        const keySize = 1024 * 1; // faster for the demo but unsafe
+        this._log("------------------------------------");
+        this._log(`Derive Rsa Keys`);
+        this._log(`input password: "${this._password}"`);
+        this._log(`input key size: ${keySize}`);
+        let elapsedTime = await this._deriveRsaKeysWorker.deriveRsaKeys(this._password, keySize);
+        this._log("output privateKeyPem");
+        this._log(this._deriveRsaKeysWorker.privateKeyPem);
+        this._log("output publicKeyPem");
+        this._log(this._deriveRsaKeysWorker.publicKeyPem);
+        this._log("output ivValue");
+        printHexadecimalStrings(this._log.bind(this), this._deriveRsaKeysWorker.ivValue, 32);
+        this._log(`Derive Rsa Keys done (elapsedTime: ${elapsedTime}ms)`);
+        this._log("------------------------------------");
+        this._rsaKeyPair = this._deriveRsaKeysWorker.makeRsaKeyPair();
+    }
+    async _computeDiffieHellmanSharedSecret(publicKey) {
+        if (!this._diffieHellmanWorker) {
+            throw new Error("worker (workerObtainCipherKey) not initialized");
+        }
+        // if (!this._deriveRsaKeysWorker) {
+        //   throw new Error("worker (deriveRsaKeysWorker) not initialized");
+        // }
+        this._log("------------------------------------");
+        this._log("Diffie Hellman Key Exchange");
+        this._log(`computing shared secret`);
+        this._log(`input publicKey`);
+        printHexadecimalStrings(this._log.bind(this), publicKey, 32);
+        const elapsed = await this._diffieHellmanWorker.computeDiffieHellmanSharedSecret(publicKey);
+        // this._sharedSecret = this._diffieHellmanWorker.sharedSecret;
+        this._log(`output sharedSecret`);
+        printHexadecimalStrings(this._log.bind(this), this._diffieHellmanWorker.sharedSecret, 32);
+        this._log(`computed shared secret (${elapsed}ms)`);
+        this._log("------------------------------------");
+    }
+    async _initializeAesSymmetricCipher() {
+        if (!this._deriveRsaKeysWorker) {
+            throw new Error("worker (deriveRsaKeysWorker) not initialized");
+        }
+        if (!this._deriveRsaKeysWorker.ivValue) {
+            throw new Error("iv value not initialized");
+        }
+        if (!this._diffieHellmanWorker) {
+            throw new Error("worker (workerObtainCipherKey) not initialized");
+        }
+        if (!this._diffieHellmanWorker.sharedSecret) {
+            throw new Error("shared secret not initialized");
+        }
+        this._log("------------------------------------");
+        this._log("AES Symmetric Cipher");
+        this._log("initializing");
+        this._log("256bits key from computed shared secret");
+        const startTime = Date.now();
+        this._aesSymmetricCipher.initializeFromHexStr(this._diffieHellmanWorker.sharedSecret.slice(0, 64), // 64hex -> 32bytes ->  256bits key
+        this._deriveRsaKeysWorker.ivValue);
+        const endTime = Date.now();
+        this._log(`initialized (${endTime - startTime}ms)`);
+        this._log("------------------------------------");
     }
 }
 
@@ -681,14 +762,12 @@ const logMessagePayload = (logger, inAlign, inText) => {
                 try {
                     const jsonSecMsg = JSON.parse(jsonMsg.payload);
                     if (isSecurityRequestPayload(jsonSecMsg)) {
-                        logger.alignedLog(inAlign, `payload.publicKey:`);
-                        printHexadecimalStrings$1(logger, jsonSecMsg.publicKey, 64, inAlign);
-                        logger.alignedLog(inAlign, `payload.ivValue:`);
-                        printHexadecimalStrings$1(logger, jsonSecMsg.ivValue, 64, inAlign);
+                        logger.alignedLog(inAlign, `payload.signedPublicKey:`);
+                        printHexadecimalStrings$1(logger, jsonSecMsg.signedPublicKey, 64, inAlign);
                     }
                     else if (isSecurityResponsePayload(jsonSecMsg)) {
-                        logger.alignedLog(inAlign, `payload.publicKey:`);
-                        printHexadecimalStrings$1(logger, jsonSecMsg.publicKey, 64, inAlign);
+                        logger.alignedLog(inAlign, `payload.signedPublicKey:`);
+                        printHexadecimalStrings$1(logger, jsonSecMsg.signedPublicKey, 64, inAlign);
                     }
                     else {
                         logger.alignedLog(inAlign, `payload:`);
@@ -753,42 +832,7 @@ class FakeWebSocket {
 }
 
 const runLogic = async (logger) => {
-    logger.logCenter(logger.makeColor([128, 128, 0], logger.makeSize(30, logger.makeBorder("Derive RSA Keys from password"))));
-    CrytpoppWasmModule.get();
-    const deriveRsaKeysWorker = new DeriveRsaKeysWorker();
-    await deriveRsaKeysWorker.initialize();
-    // const keySize = 1024 * 3;
-    const keySize = 1024 * 1;
-    logger.logCenter(logger.makeBorder(`Test1, Password: "pineapple", Key Size: ${keySize}`));
-    let elapsedTime = await deriveRsaKeysWorker.deriveRsaKeys("pineapple", keySize);
-    logger.logCenter(deriveRsaKeysWorker.privateKeyPem);
-    logger.logCenter(deriveRsaKeysWorker.publicKeyPem);
-    logger.logCenter(logger.makeBorder(`Test1 elapsedTime: ${elapsedTime}ms`));
-    const rsaKeyPairTest1 = deriveRsaKeysWorker.makeRsaKeyPair();
-    logger.logCenter(logger.makeBorder(`Test2, Password: "pen", Key Size: ${keySize}`));
-    elapsedTime = await deriveRsaKeysWorker.deriveRsaKeys("pen", keySize);
-    logger.logCenter(deriveRsaKeysWorker.privateKeyPem);
-    logger.logCenter(deriveRsaKeysWorker.publicKeyPem);
-    logger.logCenter(logger.makeBorder(`Test2 elapsedTime: ${elapsedTime}ms`));
-    deriveRsaKeysWorker.makeRsaKeyPair();
-    logger.logCenter(logger.makeBorder(`Test3, Password: "pineapple", Key Size: ${keySize}`));
-    elapsedTime = await deriveRsaKeysWorker.deriveRsaKeys("pineapple", keySize);
-    logger.logCenter(deriveRsaKeysWorker.privateKeyPem);
-    logger.logCenter(deriveRsaKeysWorker.publicKeyPem);
-    logger.logCenter(logger.makeBorder(`Test3 elapsedTime: ${elapsedTime}ms`));
-    const rsaKeyPairTest3 = deriveRsaKeysWorker.makeRsaKeyPair();
-    //
-    logger.logCenter(logger.makeBorder(`Sign payload with Test1 private key`));
-    const payload = 'LOL';
-    const signedPayload = rsaKeyPairTest1.signPayloadToHexStr(payload);
-    logger.logCenter(`\npayload: "${payload}"`);
-    logger.logCenter(`\nsignedPayload`);
-    printHexadecimalStrings$1(logger, signedPayload, 64, 'center');
-    logger.logCenter(logger.makeBorder(`Verify payload with Test3 public key (same password)`));
-    const verifiedPayload = rsaKeyPairTest3.verifyHexStrPayloadToStr(signedPayload);
-    logger.logCenter(`\nverifiedPayload: "${verifiedPayload}"`);
-    logger.logCenter(logger.makeColor([128, 128, 0], logger.makeSize(30, logger.makeBorder(`Derive RSA Keys from password`))));
-    logger.logCenter(logger.makeColor([128, 128, 0], logger.makeSize(30, logger.makeBorder("Secure Connection Test"))));
+    logger.logCenter(logger.makeColor([128, 128, 0], logger.makeSize(30, logger.makeBorder("Secure End To End Connection Test"))));
     const clientA_str = logger.makeColor([128 + 64, 128, 128], "Client A");
     const clientB_str = logger.makeColor([128, 128, 128 + 64], "Client B");
     //
@@ -816,10 +860,13 @@ const runLogic = async (logger) => {
             logger.logRight(inLogMsg);
         }
     };
+    // must only be known by both clients
+    // must never be shared over the network
+    const knownPassword = "pineapple";
     logger.logLeft(`${clientA_str} created`);
-    const clientA = new AsyncSecureClient(fakeWebSocketA, onLogA);
+    const clientA = new AsyncSecureClient(knownPassword, fakeWebSocketA, onLogA);
     logger.logRight(`${clientB_str} created`);
-    const clientB = new AsyncSecureClient(fakeWebSocketB, onLogB);
+    const clientB = new AsyncSecureClient(knownPassword, fakeWebSocketB, onLogB);
     clientA.onReceive(async (inText) => {
         logger.alignedLog("left", `${clientA_str} received:`);
         logger.alignedLog("left", logger.makeColor([64, 128 + 64, 64], logger.makeSize(25, `"${inText}"`)));
@@ -859,6 +906,17 @@ const runLogic = async (logger) => {
         await fakeWebSocketA.pipeMessages(fakeWebSocketB);
         await fakeWebSocketB.pipeMessages(fakeWebSocketA);
     }
+    logger.logCenter(logger.makeBorder(`[unencrypted] Client A send to Client B`));
+    logger.logLeft(`${clientA_str} now sending a message:`);
+    const messageToSendAgain = "Let's use our usual password...";
+    logger.alignedLog("left", logger.makeColor([64, 128 + 64, 64], logger.makeSize(25, `"${messageToSendAgain}"`)));
+    logger.log(`\n`);
+    clientA.send(messageToSendAgain);
+    while (fakeWebSocketA.hasMessageToSend() ||
+        fakeWebSocketB.hasMessageToSend()) {
+        await fakeWebSocketA.pipeMessages(fakeWebSocketB);
+        await fakeWebSocketB.pipeMessages(fakeWebSocketA);
+    }
     //
     //
     logger.logCenter(logger.makeBorder(`Client A send request for encryption to Client B`));
@@ -880,17 +938,24 @@ const runLogic = async (logger) => {
     await fakeWebSocketA.pipeMessages(fakeWebSocketB);
     logger.logCenter(logger.makeBorder(`[encrypted] Client B send to Client A`));
     logger.logRight(`${clientB_str} now sending a message:`);
-    const newMessageToReply = "I'd say we're pretty safe right now :)";
+    const newMessageToReply = "The key was public,<br>but signed it with our password,<br>it proves it was from you and no one else,<br>I'd say we're pretty safe right now :)";
     logger.alignedLog("right", logger.makeColor([64, 128 + 64, 64], logger.makeSize(25, `"${newMessageToReply}"`)));
     logger.log(`\n`);
     clientB.send(newMessageToReply);
     await fakeWebSocketB.pipeMessages(fakeWebSocketA);
+    logger.logCenter(logger.makeBorder(`[encrypted] Client A send to Client B`));
+    logger.logLeft(`${clientA_str} now sending a message:`);
+    const newMessageToSendAgain = "Yup, And we can always get a new<br>randomly encrypted channel like this<br>one from the same password again";
+    logger.alignedLog("left", logger.makeColor([64, 128 + 64, 64], logger.makeSize(25, `"${newMessageToSendAgain}"`)));
+    logger.log(`\n`);
+    clientA.send(newMessageToSendAgain);
+    await fakeWebSocketA.pipeMessages(fakeWebSocketB);
     //
     //
     //
     clientA.delete();
     clientB.delete();
-    logger.logCenter(logger.makeColor([128, 128, 0], logger.makeSize(30, logger.makeBorder(`Secure Connection Test`))));
+    logger.logCenter(logger.makeColor([128, 128, 0], logger.makeSize(30, logger.makeBorder("Secure End To End Connection Test"))));
 };
 
 /// <reference no-default-lib="true"/>

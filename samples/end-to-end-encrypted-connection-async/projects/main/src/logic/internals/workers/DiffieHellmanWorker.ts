@@ -1,5 +1,5 @@
 
-import { DiffieHellman } from "../../../../_common"
+import { DiffieHellman } from "../../../../../_common"
 
 const _workerMessageOnce = async (inWorker: Worker) => {
   return new Promise<any>((resolve, reject) => {
@@ -108,7 +108,7 @@ export class DiffieHellmanWorker {
     this._sharedSecret = undefined;
   }
 
-  async generateDiffieHellmanKeys(): Promise<void> {
+  async generateDiffieHellmanKeys(): Promise<number> {
 
     if (!this._workerInstance) {
       throw new Error("worker not initialized");
@@ -123,9 +123,11 @@ export class DiffieHellmanWorker {
     }
 
     this._publicKey = message.response.publicKey;
+
+    return message.response.elapsedTime;
   }
 
-  async computeDiffieHellmanSharedSecret(publicKey: string): Promise<void> {
+  async computeDiffieHellmanSharedSecret(publicKey: string): Promise<number> {
 
     if (!this._workerInstance) {
       throw new Error("worker not initialized");
@@ -140,6 +142,8 @@ export class DiffieHellmanWorker {
     }
 
     this._sharedSecret = message.response.sharedSecret;
+
+    return message.response.elapsedTime;
   }
 
   get publicKey(): string | undefined {

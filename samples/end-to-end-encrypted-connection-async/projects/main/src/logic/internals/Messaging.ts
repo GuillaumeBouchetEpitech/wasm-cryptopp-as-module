@@ -41,18 +41,16 @@ export enum EncryptedCommunicationState {
 };
 
 export type SecurityPayload = {
-  publicKey: string;
-  ivValue: string;
+  signedPublicKey: string;
 };
 export const isSecurityResponsePayload = (inValue: any): inValue is SecurityPayload => {
   return (
     typeof(inValue) === 'object' &&
-    typeof(inValue.publicKey) === 'string'
+    typeof(inValue.signedPublicKey) === 'string'
   )
 }
 export const isSecurityRequestPayload = (inValue: any): inValue is SecurityPayload => {
   return (
-    isSecurityResponsePayload(inValue) &&
-    typeof(inValue.ivValue) === 'string'
+    isSecurityResponsePayload(inValue)
   )
 }

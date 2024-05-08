@@ -1,26 +1,5 @@
 'use strict';
 
-var StrategiesTypes$1;
-(function (StrategiesTypes) {
-    StrategiesTypes["initialize"] = "initialize";
-    StrategiesTypes["create_secure_context"] = "create_secure_context";
-    StrategiesTypes["derive_rsa_keys"] = "derive_rsa_keys";
-})(StrategiesTypes$1 || (StrategiesTypes$1 = {}));
-//
-//
-//
-
-var StrategiesTypes;
-(function (StrategiesTypes) {
-    StrategiesTypes["initialize"] = "initialize";
-    StrategiesTypes["create_secure_context"] = "create_secure_context";
-    StrategiesTypes["generate_diffie_hellman_keys"] = "generate_diffie_hellman_keys";
-    StrategiesTypes["compute_diffie_hellman_shared_secret"] = "compute_diffie_hellman_shared_secret";
-})(StrategiesTypes || (StrategiesTypes = {}));
-//
-//
-//
-
 importScripts("../../../build/wasm-cryptopp.js");
 class CrytpoppWasmModule {
     static _wasmModule;
@@ -43,6 +22,27 @@ class CrytpoppWasmModule {
         return this._wasmModule;
     }
 }
+
+var StrategiesTypes$1;
+(function (StrategiesTypes) {
+    StrategiesTypes["initialize"] = "initialize";
+    StrategiesTypes["create_secure_context"] = "create_secure_context";
+    StrategiesTypes["derive_rsa_keys"] = "derive_rsa_keys";
+})(StrategiesTypes$1 || (StrategiesTypes$1 = {}));
+//
+//
+//
+
+var StrategiesTypes;
+(function (StrategiesTypes) {
+    StrategiesTypes["initialize"] = "initialize";
+    StrategiesTypes["create_secure_context"] = "create_secure_context";
+    StrategiesTypes["generate_diffie_hellman_keys"] = "generate_diffie_hellman_keys";
+    StrategiesTypes["compute_diffie_hellman_shared_secret"] = "compute_diffie_hellman_shared_secret";
+})(StrategiesTypes || (StrategiesTypes = {}));
+//
+//
+//
 
 const isInitialize = (data) => data?.type === StrategiesTypes$1.initialize;
 const initializeStrategy = async (data) => {
@@ -96,7 +96,6 @@ const createSecureContextStrategy = async (data) => {
     return { elapsedTime, id: newKeyStr };
 };
 
-// import { setupDiffieHellman } from "./utilities"
 const isGenerateCipherKey = (data) => data?.type === StrategiesTypes$1.derive_rsa_keys;
 const deriveRsaKeys = async (data) => {
     if (!isGenerateCipherKey(data)) {
@@ -147,7 +146,6 @@ const deriveRsaKeys = async (data) => {
         secureContext.publicRsaKey.setFromPrivateKey(secureContext.privateRsaKey);
         secureContext._data.publicKeyPem = secureContext.publicRsaKey.getAsPemString();
     }
-    // secureContext.publicKey = setupDiffieHellman(secureContext.diffieHellmanClient);
     //
     //
     const loadEndTime = Date.now();
@@ -156,6 +154,7 @@ const deriveRsaKeys = async (data) => {
         elapsedTime,
         privateKeyPem: secureContext._data.privateKeyPem,
         publicKeyPem: secureContext._data.publicKeyPem,
+        ivValue: secureContext._data.ivValue,
     };
 };
 
@@ -181,6 +180,11 @@ self.onmessage = async (event) => {
         self.postMessage({ success: true, response });
     }
     catch (err) {
+        if (typeof (err) === 'number') {
+            const wasmModule = CrytpoppWasmModule.get();
+            const errMsg = wasmModule.getExceptionMessage(err);
+            err = new Error(errMsg);
+        }
         console.log("worker: on reply error");
         console.log("type", event.data.type);
         console.log("response.error", err);

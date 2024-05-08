@@ -5,11 +5,11 @@ import { CrytpoppWasmModule } from "@local-framework";
 
 import { ICommunication, onReceiveCallback } from "./internals/FakeWebSocket";
 
-import { DiffieHellmanWorker } from "./internals/DiffieHellmanWorker";
+import { DiffieHellmanWorker } from "./internals/workers/DiffieHellmanWorker";
+import { DeriveRsaKeysWorker, RsaKeyPair } from "./internals/workers/DeriveRsaKeysWorker";
 
-import { EncryptedCommunicationState, isMessage, isSecurityRequestPayload, isSecurityResponsePayload, MessageTypes } from "./internals/Messaging";
+import { EncryptedCommunicationState, isMessage, isSecurityRequestPayload, isSecurityResponsePayload, MessageTypes, SecurityPayload } from "./internals/Messaging";
 
-import { getRandomHexStr } from "./internals/getRandomHexStr";
 import { printHexadecimalStrings } from "./internals/printHexadecimalStrings";
 
 //
@@ -30,20 +30,23 @@ export class AsyncSecureClient {
 
   private _wasDeleted = false;
 
+  private _password: string;
+
   private readonly _communication: ICommunication;
   private _EncryptedCommunicationState = EncryptedCommunicationState.unencrypted;
   private _onReceiveCallbacks: onReceiveCallback[] = [];
   private _onLogging: onLogCallback;
 
-  private _workerObtainCipherKey: DiffieHellmanWorker | undefined;
-
-  private _publicKey?: string;
-  private _ivValue?: string;
-  private _sharedSecret?: string;
+  private _diffieHellmanWorker: DiffieHellmanWorker | undefined;
+  private _deriveRsaKeysWorker: DeriveRsaKeysWorker | undefined;
+  private _rsaKeyPair: RsaKeyPair | undefined;
 
   private _aesSymmetricCipher: wasmCryptoppJs.AesSymmetricCipherJs;
 
-  constructor(inCommunication: ICommunication, inOnLogging: onLogCallback) {
+  constructor(password: string, inCommunication: ICommunication, inOnLogging: onLogCallback) {
+
+    this._password = password;
+
     this._communication = inCommunication;
     this._onLogging = inOnLogging;
 
@@ -52,45 +55,78 @@ export class AsyncSecureClient {
     this._aesSymmetricCipher = new wasmModule.AesSymmetricCipherJs();
 
     this._communication.onReceive(async (inMsg: string) => {
-      await this._processReceivedMessage(inMsg);
+      await this._processReceivedClientMessage(inMsg);
     });
   }
 
   async initialize(): Promise<void> {
-    await this._initializeDiffieHellmanWorker();
+    this._diffieHellmanWorker = new DiffieHellmanWorker();
+    this._deriveRsaKeysWorker = new DeriveRsaKeysWorker();
+
+    await Promise.all([
+      this._diffieHellmanWorker.initialize(),
+      this._deriveRsaKeysWorker.initialize(),
+    ]);
   }
 
   delete() {
     this._aesSymmetricCipher.delete();
-    this._workerObtainCipherKey?.dispose();
+    this._diffieHellmanWorker?.dispose();
+    this._deriveRsaKeysWorker?.dispose();
     this._wasDeleted = true;
   }
+
+  //region Make Secure
 
   async makeSecure(): Promise<void> {
     if (this._wasDeleted) {
       throw new Error("was deleted");
     }
-    if (!this._workerObtainCipherKey) {
-      throw new Error("worker not initialized");
+    if (!this._diffieHellmanWorker) {
+      throw new Error("worker (workerObtainCipherKey) not initialized");
+    }
+    if (!this._deriveRsaKeysWorker) {
+      throw new Error("worker (deriveRsaKeysWorker) not initialized");
     }
 
     this._log("now securing the connection");
     this._EncryptedCommunicationState = EncryptedCommunicationState.initiated;
 
+    // both can be inside a Promise.all([...])
+    // -> but since it would mess up the logs of this demo...
     await this._generateDiffieHellmanKeys();
+    await this._deriveRsaKeys();
 
-    this._ivValue = getRandomHexStr(16);
+    if (!this._diffieHellmanWorker.publicKey) {
+      throw new Error("no public key generated");
+    }
+    if (!this._deriveRsaKeysWorker.ivValue) {
+      throw new Error("no iv value generated");
+    }
+    // this._ivValue = getRandomHexStr(16);
 
     this._log(`message.response.ivValue`);
-    printHexadecimalStrings(this._log.bind(this), this._ivValue, 64);
+    printHexadecimalStrings(this._log.bind(this), this._deriveRsaKeysWorker.ivValue, 32);
 
-    const payload = JSON.stringify({
-      publicKey: this._publicKey,
-      ivValue: this._ivValue,
-    });
+    if (!this._rsaKeyPair) {
+      throw new Error("Rsa Key Pair not initialized");
+    }
 
-    this._communication.send(JSON.stringify({ type: MessageTypes.SecurityRequest, payload }));
+    this._log("signing our public key for the peer");
+
+    const signedPublicKey = this._rsaKeyPair.signPayloadToHexStr(this._diffieHellmanWorker.publicKey);
+
+    this._log("sending our signed public key to the peer");
+    const payload: SecurityPayload = {
+      signedPublicKey: signedPublicKey,
+    };
+
+    this._communication.send(JSON.stringify({
+      type: MessageTypes.SecurityRequest,
+      payload: JSON.stringify(payload),
+    }));
   }
+  //endregion Make Secure
 
   send(inText: string): void {
 
@@ -150,14 +186,9 @@ export class AsyncSecureClient {
 
 
 
+  //region Process Message
 
-
-  private async _initializeDiffieHellmanWorker(): Promise<void> {
-    this._workerObtainCipherKey = new DiffieHellmanWorker();
-    await this._workerObtainCipherKey.initialize();
-  }
-
-  private async _processReceivedMessage(inText: string) {
+  private async _processReceivedClientMessage(inText: string) {
 
     if (this._wasDeleted) {
       throw new Error("was deleted");
@@ -211,22 +242,45 @@ export class AsyncSecureClient {
         if (!isSecurityRequestPayload(jsonPayload)) {
           throw new Error("received message security request payload unrecognized");
         }
+        if (!this._diffieHellmanWorker) {
+          throw new Error("worker (workerObtainCipherKey) not initialized");
+        }
 
-        this._ivValue = jsonPayload.ivValue;
-
+        // both can be inside a Promise.all([...])
+        // -> but since it would mess up the logs of this demo...
+        await this._deriveRsaKeys();
         await this._generateDiffieHellmanKeys();
-        await this._computeDiffieHellmanSharedSecret(jsonPayload.publicKey);
-        await this._initializeAesSymmetricCipher();
 
-        this._log("sending public key");
+        if (!this._rsaKeyPair) {
+          throw new Error("Rsa Key Pair not initialized");
+        }
+
+        this._log("verifying signed public key from the peer");
+        const verifiedPublicKey = this._rsaKeyPair.verifyHexStrPayloadToStr(jsonPayload.signedPublicKey);
+
+        await this._computeDiffieHellmanSharedSecret(verifiedPublicKey);
+        await this._initializeAesSymmetricCipher();
 
         this._EncryptedCommunicationState = EncryptedCommunicationState.ready;
 
-        const payload = JSON.stringify({
-          publicKey: this._publicKey,
-        });
+        if (!this._diffieHellmanWorker.publicKey) {
+          throw new Error("missing public key");
+        }
 
-        this._communication.send(JSON.stringify({ type: MessageTypes.SecurityResponse, payload }));
+        this._log("signing our public key for the peer");
+
+        const signedPublicKey = this._rsaKeyPair.signPayloadToHexStr(this._diffieHellmanWorker.publicKey);
+
+        this._log("sending our signed public key to the peer");
+        const payload: SecurityPayload = {
+          signedPublicKey: signedPublicKey,
+        };
+
+        this._communication.send(
+          JSON.stringify({
+            type: MessageTypes.SecurityResponse,
+            payload: JSON.stringify(payload),
+          }));
 
         break;
       }
@@ -245,8 +299,14 @@ export class AsyncSecureClient {
         if (!isSecurityResponsePayload(jsonPayload)) {
           throw new Error("received message security response payload unrecognized");
         }
+        if (!this._rsaKeyPair) {
+          throw new Error("Rsa Key Pair not initialized");
+        }
 
-        await this._computeDiffieHellmanSharedSecret(jsonPayload.publicKey);
+        this._log("verifying signed public key of the peer");
+        const verifiedPublicKey = this._rsaKeyPair.verifyHexStrPayloadToStr(jsonPayload.signedPublicKey);
+
+        await this._computeDiffieHellmanSharedSecret(verifiedPublicKey);
         await this._initializeAesSymmetricCipher();
 
         this._log("connection now confirmed secure");
@@ -261,11 +321,15 @@ export class AsyncSecureClient {
 
   }
 
+  //endregion Process Message
+
   private _log(inLogMsg: string, inLogHeader?: string) {
     if (this._onLogging) {
       this._onLogging(inLogMsg, inLogHeader);
     }
   }
+
+  //region Helpers
 
   private async _generateDiffieHellmanKeys() {
 
@@ -274,46 +338,87 @@ export class AsyncSecureClient {
     this._log("generating public/private keys");
     this._log("2048-bit MODP Group with 256-bit Prime Order Subgroup");
 
-    if (!this._workerObtainCipherKey) {
-      throw new Error("worker not initialized");
+    if (!this._diffieHellmanWorker) {
+      throw new Error("worker (workerObtainCipherKey) not initialized");
     }
 
-    await this._workerObtainCipherKey.generateDiffieHellmanKeys();
-    this._publicKey = this._workerObtainCipherKey.publicKey;
+    const elapsed = await this._diffieHellmanWorker.generateDiffieHellmanKeys();
 
-    this._log(`this._publicKey`);
-    printHexadecimalStrings(this._log.bind(this), this._publicKey!, 64);
+    this._log(`diffieHellmanWorker.publicKey`);
+    printHexadecimalStrings(this._log.bind(this), this._diffieHellmanWorker.publicKey!, 32);
 
-    // this._log(`generated public/private keys (${message.response.elapsedTime}ms)`);
+    this._log(`generated public/private keys (${elapsed}ms)`);
     this._log("------------------------------------");
+  }
+
+  private async _deriveRsaKeys() {
+
+    if (!this._deriveRsaKeysWorker) {
+      throw new Error("worker (deriveRsaKeysWorker) not initialized");
+    }
+
+    // const keySize = 1024 * 3; // actually safe
+    const keySize = 1024 * 1; // faster for the demo but unsafe
+
+    this._log("------------------------------------");
+    this._log(`Derive Rsa Keys`);
+    this._log(`input password: "${this._password}"`);
+    this._log(`input key size: ${keySize}`);
+
+    let elapsedTime = await this._deriveRsaKeysWorker.deriveRsaKeys(this._password, keySize);
+
+    this._log("output privateKeyPem");
+    this._log(this._deriveRsaKeysWorker.privateKeyPem!);
+    this._log("output publicKeyPem");
+    this._log(this._deriveRsaKeysWorker.publicKeyPem!);
+    this._log("output ivValue");
+    printHexadecimalStrings(this._log.bind(this), this._deriveRsaKeysWorker.ivValue!, 32);
+
+    this._log(`Derive Rsa Keys done (elapsedTime: ${elapsedTime}ms)`);
+    this._log("------------------------------------");
+
+    this._rsaKeyPair = this._deriveRsaKeysWorker.makeRsaKeyPair();
   }
 
   private async _computeDiffieHellmanSharedSecret(publicKey: string) {
 
-    if (!this._workerObtainCipherKey) {
-      throw new Error("worker not initialized");
+    if (!this._diffieHellmanWorker) {
+      throw new Error("worker (workerObtainCipherKey) not initialized");
     }
+    // if (!this._deriveRsaKeysWorker) {
+    //   throw new Error("worker (deriveRsaKeysWorker) not initialized");
+    // }
+
+    this._log("------------------------------------");
+    this._log("Diffie Hellman Key Exchange");
+    this._log(`computing shared secret`);
 
     this._log(`input publicKey`);
-    printHexadecimalStrings(this._log.bind(this), publicKey, 64);
+    printHexadecimalStrings(this._log.bind(this), publicKey, 32);
 
-    await this._workerObtainCipherKey.computeDiffieHellmanSharedSecret(publicKey);
-    this._sharedSecret = this._workerObtainCipherKey.sharedSecret;
+    const elapsed = await this._diffieHellmanWorker.computeDiffieHellmanSharedSecret(publicKey);
+    // this._sharedSecret = this._diffieHellmanWorker.sharedSecret;
 
-    this._log(`this._sharedSecret`);
-    printHexadecimalStrings(this._log.bind(this), this._sharedSecret!, 64);
+    this._log(`output sharedSecret`);
+    printHexadecimalStrings(this._log.bind(this), this._diffieHellmanWorker.sharedSecret!, 32);
+
+    this._log(`computed shared secret (${elapsed}ms)`);
+    this._log("------------------------------------");
   }
 
   private async _initializeAesSymmetricCipher() {
 
-    if (!this._ivValue) {
+    if (!this._deriveRsaKeysWorker) {
+      throw new Error("worker (deriveRsaKeysWorker) not initialized");
+    }
+    if (!this._deriveRsaKeysWorker.ivValue) {
       throw new Error("iv value not initialized");
     }
-    if (!this._sharedSecret) {
-      throw new Error("shared secret not initialized");
+    if (!this._diffieHellmanWorker) {
+      throw new Error("worker (workerObtainCipherKey) not initialized");
     }
-    if (!this._workerObtainCipherKey) {
-      throw new Error("worker not initialized");
+    if (!this._diffieHellmanWorker.sharedSecret) {
+      throw new Error("shared secret not initialized");
     }
 
     this._log("------------------------------------");
@@ -324,13 +429,15 @@ export class AsyncSecureClient {
     const startTime = Date.now();
 
     this._aesSymmetricCipher.initializeFromHexStr(
-      this._sharedSecret.slice(0, 64), // 64hex -> 32bytes ->  256bits key
-      this._ivValue,
+      this._diffieHellmanWorker.sharedSecret.slice(0, 64), // 64hex -> 32bytes ->  256bits key
+      this._deriveRsaKeysWorker.ivValue,
     );
 
     const endTime = Date.now();
     this._log(`initialized (${endTime - startTime}ms)`);
     this._log("------------------------------------");
   }
+
+  //endregion Helpers
 
 };

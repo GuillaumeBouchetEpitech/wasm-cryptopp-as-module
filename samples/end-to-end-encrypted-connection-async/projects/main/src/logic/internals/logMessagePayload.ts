@@ -59,15 +59,13 @@ export const logMessagePayload = (logger: Logger, inAlign: "left" | "center" | "
 
           if (isSecurityRequestPayload(jsonSecMsg)) {
 
-            logger.alignedLog(inAlign, `payload.publicKey:`);
-            printHexadecimalStrings(logger, jsonSecMsg.publicKey, 64, inAlign)
-            logger.alignedLog(inAlign, `payload.ivValue:`);
-            printHexadecimalStrings(logger, jsonSecMsg.ivValue, 64, inAlign)
+            logger.alignedLog(inAlign, `payload.signedPublicKey:`);
+            printHexadecimalStrings(logger, jsonSecMsg.signedPublicKey, 64, inAlign)
 
           } else if (isSecurityResponsePayload(jsonSecMsg)) {
 
-            logger.alignedLog(inAlign, `payload.publicKey:`);
-            printHexadecimalStrings(logger, jsonSecMsg.publicKey, 64, inAlign)
+            logger.alignedLog(inAlign, `payload.signedPublicKey:`);
+            printHexadecimalStrings(logger, jsonSecMsg.signedPublicKey, 64, inAlign)
 
           } else {
             logger.alignedLog(inAlign, `payload:`);

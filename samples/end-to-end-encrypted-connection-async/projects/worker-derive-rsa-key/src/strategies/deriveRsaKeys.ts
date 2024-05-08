@@ -5,8 +5,6 @@ import { getSecureContext } from "../data-store"
 
 import { DeriveRsaKeys } from "../../../_common"
 
-// import { setupDiffieHellman } from "./utilities"
-
 const isGenerateCipherKey = (data: any): data is DeriveRsaKeys.IMsgDeriveRsaKeys_request => data?.type === DeriveRsaKeys.StrategiesTypes.derive_rsa_keys;
 
 
@@ -80,8 +78,6 @@ export const deriveRsaKeys = async (data: any): Promise<DeriveRsaKeys.IMsgDerive
     secureContext._data.publicKeyPem = secureContext.publicRsaKey.getAsPemString();
   }
 
-  // secureContext.publicKey = setupDiffieHellman(secureContext.diffieHellmanClient);
-
   //
   //
 
@@ -92,5 +88,6 @@ export const deriveRsaKeys = async (data: any): Promise<DeriveRsaKeys.IMsgDerive
     elapsedTime,
     privateKeyPem: secureContext._data.privateKeyPem,
     publicKeyPem: secureContext._data.publicKeyPem,
+    ivValue: secureContext._data.ivValue,
   };
 };
