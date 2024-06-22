@@ -2,6 +2,7 @@
 #include "../DiffieHellmanClient.hpp"
 #include "../HashDrbgRandomGenerator.hpp"
 #include "../AutoSeededRandomPool.hpp"
+#include "../AesStreamCipher.hpp"
 #include "../AesSymmetricCipher.hpp"
 #include "../KeyDerivationScheme.hpp"
 #include "../RSAFeatures.hpp"
@@ -22,6 +23,12 @@ EMSCRIPTEN_BINDINGS(my_namespace) {
     .function("getRandomHexStr", &HashDrbgRandomGenerator::getRandomHexStr)
     ;
 
+  emscripten::class_<AesStreamCipher>("AesStreamCipherJs")
+    .constructor()
+    .function("initializeFromHexStr", &AesStreamCipher::initializeFromHexStr)
+    .function("encryptFromHexStrAsHexStr", &AesStreamCipher::encryptFromHexStrAsHexStr)
+    .function("decryptFromHexStrAsHexStr", &AesStreamCipher::decryptFromHexStrAsHexStr)
+    ;
 
   emscripten::class_<AesSymmetricCipher>("AesSymmetricCipherJs")
     .constructor()

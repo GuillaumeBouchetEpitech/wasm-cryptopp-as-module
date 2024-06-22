@@ -19,7 +19,11 @@ It should be possible to expose most Crypto++ capabilities.
 
 ### Current Capabilities
 
-#### AES Symmetric Cipher:
+#### AES (CBC) Symmetric Cipher:
+  * encrypt
+  * decrypt
+
+#### AES (CTR) Stream Cipher:
   * encrypt
   * decrypt
 

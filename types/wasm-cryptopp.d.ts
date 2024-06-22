@@ -46,6 +46,14 @@ declare module wasmCryptoppJs {
   //
   //
 
+  class AesStreamCipherJs {
+    constructor();
+    delete(): void;
+    initializeFromHexStr(inKeyStr: string, inIvStr: string): void;
+    encryptFromHexStrAsHexStr(inStr: string): string;
+    decryptFromHexStrAsHexStr(inStr: string): string;
+  };
+
   class AesSymmetricCipherJs {
     constructor();
     delete(): void;

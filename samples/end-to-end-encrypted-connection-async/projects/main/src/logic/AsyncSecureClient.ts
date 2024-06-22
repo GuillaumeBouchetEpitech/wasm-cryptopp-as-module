@@ -41,7 +41,12 @@ export class AsyncSecureClient {
   private _deriveRsaKeysWorker: DeriveRsaKeysWorker | undefined;
   private _rsaKeyPair: RsaKeyPair | undefined;
 
-  private _aesSymmetricCipher: wasmCryptoppJs.AesSymmetricCipherJs;
+  // AesSymmetricCipherJs -> AES CBC
+  // private _aesSymmetricCipher: wasmCryptoppJs.AesSymmetricCipherJs;
+
+  // AesStreamCipherJs -> AES CTR
+  private _aesStreamCipher: wasmCryptoppJs.AesStreamCipherJs;
+
 
   constructor(password: string, inCommunication: ICommunication, inOnLogging: onLogCallback) {
 
@@ -52,7 +57,8 @@ export class AsyncSecureClient {
 
     const wasmModule = CrytpoppWasmModule.get();
 
-    this._aesSymmetricCipher = new wasmModule.AesSymmetricCipherJs();
+    // this._aesSymmetricCipher = new wasmModule.AesSymmetricCipherJs();
+    this._aesStreamCipher = new wasmModule.AesStreamCipherJs();
 
     this._communication.onReceive(async (inMsg: string) => {
       await this._processReceivedClientMessage(inMsg);
@@ -70,7 +76,7 @@ export class AsyncSecureClient {
   }
 
   delete() {
-    this._aesSymmetricCipher.delete();
+    this._aesStreamCipher.delete();
     this._diffieHellmanWorker?.dispose();
     this._deriveRsaKeysWorker?.dispose();
     this._wasDeleted = true;
@@ -155,7 +161,7 @@ export class AsyncSecureClient {
 
       const wasmModule = CrytpoppWasmModule.get();
       const textAshex = wasmModule.utf8ToHex(inText);
-      const encrypted = this._aesSymmetricCipher.encryptFromHexStrAsHexStr(textAshex);
+      const encrypted = this._aesStreamCipher.encryptFromHexStrAsHexStr(textAshex);
 
       const endTime = Date.now();
       this._log(`encrypted (${endTime - startTime}ms)`, "[encrypted]");
@@ -213,7 +219,7 @@ export class AsyncSecureClient {
         this._log("decrypting");
         const startTime = Date.now();
 
-        const recovered = this._aesSymmetricCipher.decryptFromHexStrAsHexStr(jsonMsg.payload);
+        const recovered = this._aesStreamCipher.decryptFromHexStrAsHexStr(jsonMsg.payload);
         const wasmModule = CrytpoppWasmModule.get();
         const plainText = wasmModule.hexToUtf8(recovered);
 
@@ -422,13 +428,13 @@ export class AsyncSecureClient {
     }
 
     this._log("------------------------------------");
-    this._log("AES Symmetric Cipher");
+    this._log("AES CTR (Stream) Cipher");
     this._log("initializing");
     this._log("256bits key from computed shared secret");
 
     const startTime = Date.now();
 
-    this._aesSymmetricCipher.initializeFromHexStr(
+    this._aesStreamCipher.initializeFromHexStr(
       this._diffieHellmanWorker.sharedSecret.slice(0, 64), // 64hex -> 32bytes ->  256bits key
       this._deriveRsaKeysWorker.ivValue,
     );

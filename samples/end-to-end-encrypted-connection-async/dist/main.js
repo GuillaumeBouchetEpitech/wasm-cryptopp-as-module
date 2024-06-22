@@ -429,13 +429,15 @@ class AsyncSecureClient {
     _diffieHellmanWorker;
     _deriveRsaKeysWorker;
     _rsaKeyPair;
-    _aesSymmetricCipher;
+    // private _aesSymmetricCipher: wasmCryptoppJs.AesSymmetricCipherJs;
+    _aesStreamCipher;
     constructor(password, inCommunication, inOnLogging) {
         this._password = password;
         this._communication = inCommunication;
         this._onLogging = inOnLogging;
         const wasmModule = CrytpoppWasmModule.get();
-        this._aesSymmetricCipher = new wasmModule.AesSymmetricCipherJs();
+        // this._aesSymmetricCipher = new wasmModule.AesSymmetricCipherJs();
+        this._aesStreamCipher = new wasmModule.AesStreamCipherJs();
         this._communication.onReceive(async (inMsg) => {
             await this._processReceivedClientMessage(inMsg);
         });
@@ -449,7 +451,7 @@ class AsyncSecureClient {
         ]);
     }
     delete() {
-        this._aesSymmetricCipher.delete();
+        this._aesStreamCipher.delete();
         this._diffieHellmanWorker?.dispose();
         this._deriveRsaKeysWorker?.dispose();
         this._wasDeleted = true;
@@ -514,7 +516,7 @@ class AsyncSecureClient {
             const startTime = Date.now();
             const wasmModule = CrytpoppWasmModule.get();
             const textAshex = wasmModule.utf8ToHex(inText);
-            const encrypted = this._aesSymmetricCipher.encryptFromHexStrAsHexStr(textAshex);
+            const encrypted = this._aesStreamCipher.encryptFromHexStrAsHexStr(textAshex);
             const endTime = Date.now();
             this._log(`encrypted (${endTime - startTime}ms)`, "[encrypted]");
             this._communication.send(JSON.stringify({ type: MessageTypes.EncryptedMessage, payload: encrypted }));
@@ -552,7 +554,7 @@ class AsyncSecureClient {
                 {
                     this._log("decrypting");
                     const startTime = Date.now();
-                    const recovered = this._aesSymmetricCipher.decryptFromHexStrAsHexStr(jsonMsg.payload);
+                    const recovered = this._aesStreamCipher.decryptFromHexStrAsHexStr(jsonMsg.payload);
                     const wasmModule = CrytpoppWasmModule.get();
                     const plainText = wasmModule.hexToUtf8(recovered);
                     const endTime = Date.now();
@@ -706,11 +708,11 @@ class AsyncSecureClient {
             throw new Error("shared secret not initialized");
         }
         this._log("------------------------------------");
-        this._log("AES Symmetric Cipher");
+        this._log("AES CTR (Stream) Cipher");
         this._log("initializing");
         this._log("256bits key from computed shared secret");
         const startTime = Date.now();
-        this._aesSymmetricCipher.initializeFromHexStr(this._diffieHellmanWorker.sharedSecret.slice(0, 64), // 64hex -> 32bytes ->  256bits key
+        this._aesStreamCipher.initializeFromHexStr(this._diffieHellmanWorker.sharedSecret.slice(0, 64), // 64hex -> 32bytes ->  256bits key
         this._deriveRsaKeysWorker.ivValue);
         const endTime = Date.now();
         this._log(`initialized (${endTime - startTime}ms)`);
