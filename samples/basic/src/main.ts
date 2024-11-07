@@ -18,7 +18,7 @@ window.onload = async () => {
   const loggerOutput = findOrFailHtmlElement<HTMLBaseElement>("#loggerOutput");
   const logger = new Logger(loggerOutput);
 
-  logger.logCenter(logger.makeColor([255,0,0], "\n\nSTART\n\n"));
+  logger.logCenter(Logger.makeColor([255,0,0], "\n\nSTART\n\n"));
 
   logger.logCenter("page loaded");
 
@@ -61,6 +61,6 @@ window.onload = async () => {
   //
   //
 
-  logger.logCenter(logger.makeColor([255,0,0], "\n\nSTOP\n\n"));
+  logger.logCenter(Logger.makeColor([255,0,0], "\n\nSTOP\n\n"));
 
 };

@@ -9,15 +9,15 @@ export const runRSAFeaturesTest = async (logger: Logger) => {
   const wasmModule = CrytpoppWasmModule.get();
 
   logger.logCenter(
-    logger.makeColor([128,128,0],
-      logger.makeSize(30,
-        logger.makeBorder("RSA Features test"))));
+    Logger.makeColor([128,128,0],
+      Logger.makeSize(30,
+        Logger.makeBorder("RSA Features test"))));
 
   //
   // SETUP
   //
 
-  logger.logCenter(logger.makeBorder("RSA Features: setup"));
+  logger.logCenter(Logger.makeBorder("RSA Features: setup"));
 
   const prng = new wasmModule.AutoSeededRandomPoolJs();
 
@@ -35,7 +35,7 @@ export const runRSAFeaturesTest = async (logger: Logger) => {
   // INITIALIZE
   //
 
-  logger.logCenter(logger.makeBorder("RSA Features: initialize"));
+  logger.logCenter(Logger.makeBorder("RSA Features: initialize"));
 
   logger.alignedLog('center', "generate random private key of 3072 bytes (PRIVATE KEY A)");
 
@@ -58,7 +58,7 @@ export const runRSAFeaturesTest = async (logger: Logger) => {
   // PEM LOAD
   //
 
-  logger.logCenter(logger.makeBorder("RSA Features: PEM GET/LOAD"));
+  logger.logCenter(Logger.makeBorder("RSA Features: PEM GET/LOAD"));
 
   logger.alignedLog('center', "load a new private key (PRIVATE KEY B) from the PEM of the first private key (PRIVATE KEY A)");
 
@@ -72,7 +72,7 @@ export const runRSAFeaturesTest = async (logger: Logger) => {
   // SIGN
   //
 
-  logger.logCenter(logger.makeBorder("RSA Features: SIGN"));
+  logger.logCenter(Logger.makeBorder("RSA Features: SIGN"));
 
   logger.alignedLog('center', "sign some content with the second private key (PRIVATE KEY B)");
 
@@ -80,8 +80,8 @@ export const runRSAFeaturesTest = async (logger: Logger) => {
 
   logger.alignedLog('center', `original payload:`);
   logger.logCenter(
-    logger.makeColor([0,128,0],
-      logger.makeSize(30, `"${payloadStr}"`)));
+    Logger.makeColor([0,128,0],
+      Logger.makeSize(30, `"${payloadStr}"`)));
 
   const payloadHexStr = wasmModule!.utf8ToHex(payloadStr);
 
@@ -99,7 +99,7 @@ export const runRSAFeaturesTest = async (logger: Logger) => {
   // VERIFY
   //
 
-  logger.logCenter(logger.makeBorder("RSA Features: VERIFY"));
+  logger.logCenter(Logger.makeBorder("RSA Features: VERIFY"));
 
   logger.alignedLog('center', "verify signed content with the first public key (PUBLIC KEY A)");
 
@@ -114,18 +114,18 @@ export const runRSAFeaturesTest = async (logger: Logger) => {
 
   logger.alignedLog('center', `verified payload:`);
   logger.logCenter(
-    logger.makeColor([0,128,0],
-      logger.makeSize(30, `"${verifiedMessage}"`)));
+    Logger.makeColor([0,128,0],
+      Logger.makeSize(30, `"${verifiedMessage}"`)));
 
-  logger.logCenter(logger.makeBorder("Verification"));
+  logger.logCenter(Logger.makeBorder("Verification"));
 
   if (verifiedMessage === payloadStr) {
     logger.alignedLog('center', `
-      ${logger.makeBorder(logger.makeColor([128, 255, 128], " => SUCCESS: SIGNED PAYLOAD WAS VERIFIED!"))}
+      ${Logger.makeBorder(Logger.makeColor([128, 255, 128], " => SUCCESS: SIGNED PAYLOAD WAS VERIFIED!"))}
     `);
   } else {
     logger.alignedLog('center', `
-      ${logger.makeBorder(logger.makeColor([255, 128, 128], " => FAILURE: SIGNED PAYLOAD WAS NOT VERIFIED!"))}
+      ${Logger.makeBorder(Logger.makeColor([255, 128, 128], " => FAILURE: SIGNED PAYLOAD WAS NOT VERIFIED!"))}
     `);
   }
 
@@ -143,9 +143,9 @@ export const runRSAFeaturesTest = async (logger: Logger) => {
 
 
   logger.logCenter(
-    logger.makeColor([128,128,0],
-      logger.makeSize(30,
-        logger.makeBorder("RSA Features test"))));
+    Logger.makeColor([128,128,0],
+      Logger.makeSize(30,
+        Logger.makeBorder("RSA Features test"))));
 
 
 };

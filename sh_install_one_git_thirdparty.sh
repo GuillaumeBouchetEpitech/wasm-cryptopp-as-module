@@ -19,7 +19,7 @@ esac
 #
 # INIT
 
-mkdir -p $DIR_DEPENDENCIES
+mkdir -p "$DIR_DEPENDENCIES"
 
 echo ""
 echo "###"
@@ -32,20 +32,20 @@ echo ""
 if [ -d "$DIR_DEPENDENCIES/$CURR_DEST_DIR" ]
 then
 
-  echo ""
-  echo "###"
-  echo "### dependency $CURR_NAME folder was found"
-  echo "###"
-  echo ""
+  # echo ""
+  echo "#####"
+  echo "##### dependency $CURR_NAME folder was found"
+  echo "#####"
+  # echo ""
 
   case $IS_INTERACTIVE_MODE in
   off)
 
-    echo ""
-    echo "###"
-    echo "### interacive mode is off -> skipping"
-    echo "###"
-    echo ""
+    # echo ""
+    echo "#######"
+    echo "####### interacive mode is off -> skipping"
+    echo "#######"
+    # echo ""
 
     must_install=no
     ;;
@@ -57,7 +57,7 @@ then
     echo "=> yes: 2"
     echo ""
 
-    read USER_INPUT_PROJECT
+    read -r USER_INPUT_PROJECT
 
     case $USER_INPUT_PROJECT in
     2)
@@ -76,11 +76,11 @@ then
 
 else
 
-  echo ""
-  echo "###"
-  echo "### dependency $CURR_NAME is missing -> will install"
-  echo "###"
-  echo ""
+  # echo ""
+  echo "#####"
+  echo "##### dependency $CURR_NAME is missing -> will install"
+  echo "#####"
+  # echo ""
 
   must_install=yes
 fi
@@ -90,43 +90,43 @@ fi
 case $must_install in
 yes)
 
-  echo ""
-  echo "###"
-  echo "### dependency $CURR_NAME will now be downloaded"
-  echo "###"
-  echo ""
+  # echo ""
+  echo "#####"
+  echo "##### dependency $CURR_NAME will now be downloaded"
+  echo "#####"
+  # echo ""
 
-  cd $DIR_DEPENDENCIES
+  cd "$DIR_DEPENDENCIES" || exit 1
 
   # reset
-  rm -rf $CURR_DEST_DIR
+  rm -rf "$CURR_DEST_DIR"
 
   # clone (but we only ask for one commit, which is very light)
-  git clone --quiet --depth 1 --branch $CURR_GIT_TAG https://github.com/$CURR_GIT_URL $CURR_DEST_DIR
+  git clone --quiet --depth 1 --branch "$CURR_GIT_TAG" "https://github.com/$CURR_GIT_URL" "$CURR_DEST_DIR"
 
   if [ -d "$DIR_DEPENDENCIES/$CURR_DEST_DIR" ]
   then
-    echo ""
-    echo "###"
-    echo "### dependency $CURR_NAME successfully downloaded"
-    echo "###"
-    echo ""
+    # echo ""
+    echo "#######"
+    echo "####### dependency $CURR_NAME successfully downloaded"
+    echo "#######"
+    # echo ""
   else
-    echo ""
-    echo "###"
-    echo "### [FATAL ERROR] dependency $CURR_NAME failed to be downloaded"
-    echo "###"
-    echo ""
+    # echo ""
+    echo "#######"
+    echo "####### [FATAL ERROR] dependency $CURR_NAME failed to be downloaded"
+    echo "#######"
+    # echo ""
     exit 1;
   fi
 
   ;;
 
 *)
-  echo ""
-  echo "###"
-  echo "### dependency $CURR_NAME was not downloaded"
-  echo "###"
-  echo ""
+  # echo ""
+  echo "#####"
+  echo "##### dependency $CURR_NAME was not downloaded"
+  echo "#####"
+  # echo ""
   ;;
 esac

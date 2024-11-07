@@ -22,7 +22,7 @@ window.onload = async () => {
 
   logger.logCenter("page loaded");
 
-  logger.logCenter(logger.makeColor([255,0,0], "\n\nSTART\n\n"));
+  logger.logCenter(Logger.makeColor([255,0,0], "\n\nSTART\n\n"));
 
   logger.logCenter(" loading worker-obtain-cipher-key");
 
@@ -52,6 +52,6 @@ window.onload = async () => {
 
 
   const testEndTime = Date.now();
-  logger.logCenter(logger.makeColor([255,0,0], `\n\nSTOP (${testEndTime - testStartTime}ms)\n\n`));
+  logger.logCenter(Logger.makeColor([255,0,0], `\n\nSTOP (${testEndTime - testStartTime}ms)\n\n`));
 
 };

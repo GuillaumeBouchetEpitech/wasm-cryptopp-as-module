@@ -8,19 +8,19 @@ export const runDiffieHellmanClientTest = async (logger: Logger) => {
   const wasmModule = CrytpoppWasmModule.get();
 
   logger.logCenter(
-    logger.makeColor([128,128,0],
-      logger.makeSize(30,
-        logger.makeBorder("DiffieHellmanClient test"))));
+    Logger.makeColor([128,128,0],
+      Logger.makeSize(30,
+        Logger.makeBorder("DiffieHellmanClient test"))));
 
 
-  const clientA_str = logger.makeColor([128 + 64,128,128], "Client A");
-  const clientB_str = logger.makeColor([128,128,128 + 64], "Client B");
+  const clientA_str = Logger.makeColor([128 + 64,128,128], "Client A");
+  const clientB_str = Logger.makeColor([128,128,128 + 64], "Client B");
 
   //
   //
   //
 
-  logger.logCenter(logger.makeBorder(`${clientA_str} initialize`));
+  logger.logCenter(Logger.makeBorder(`${clientA_str} initialize`));
 
   logger.logLeft(`${clientA_str} created`);
   const clientA = new wasmModule.DiffieHellmanClientJs();
@@ -37,7 +37,7 @@ export const runDiffieHellmanClientTest = async (logger: Logger) => {
   printHexadecimalStrings(logger, pubKeyHexStr_A, 64, 'left');
   logger.log();
 
-  logger.logCenter(logger.makeBorder(`${clientB_str} initialize`));
+  logger.logCenter(Logger.makeBorder(`${clientB_str} initialize`));
 
   logger.logRight(`${clientB_str} created`);
   const clientB = new wasmModule.DiffieHellmanClientJs();
@@ -58,7 +58,7 @@ export const runDiffieHellmanClientTest = async (logger: Logger) => {
   //
   //
 
-  logger.logCenter(logger.makeBorder(`${clientA_str} compute shared secret (with ${clientB_str} public key)`));
+  logger.logCenter(Logger.makeBorder(`${clientA_str} compute shared secret (with ${clientB_str} public key)`));
 
   logger.alignedLog('left', "computing");
   const sharedSecretHexStr_A = await profileScope(() => {
@@ -72,7 +72,7 @@ export const runDiffieHellmanClientTest = async (logger: Logger) => {
   printHexadecimalStrings(logger, sharedSecretHexStr_A, 64, 'left');
   logger.log();
 
-  logger.logCenter(logger.makeBorder(`${clientB_str} compute shared secret (with ${clientA_str} public key)`));
+  logger.logCenter(Logger.makeBorder(`${clientB_str} compute shared secret (with ${clientA_str} public key)`));
 
   logger.alignedLog('right', "computing");
   const sharedSecretHexStr_B = await profileScope(() => {
@@ -91,15 +91,15 @@ export const runDiffieHellmanClientTest = async (logger: Logger) => {
   //
   //
 
-  logger.logCenter(logger.makeBorder(`verification`));
+  logger.logCenter(Logger.makeBorder(`verification`));
 
   if (sharedSecretHexStr_A == sharedSecretHexStr_B) {
     logger.logCenter(`
-      ${logger.makeBorder(logger.makeColor([128, 255, 128], ` => SUCCESS: BOTH CLIENTS SHARE THE SAME SECRET!`))}
+      ${Logger.makeBorder(Logger.makeColor([128, 255, 128], ` => SUCCESS: BOTH CLIENTS SHARE THE SAME SECRET!`))}
     `);
   } else {
     logger.logCenter(`
-      ${logger.makeBorder(logger.makeColor([255, 128, 128], ` => FAILURE: CLIENTS SECRETS ARE NOT MATCHING!`))}
+      ${Logger.makeBorder(Logger.makeColor([255, 128, 128], ` => FAILURE: CLIENTS SECRETS ARE NOT MATCHING!`))}
     `);
   }
 
@@ -112,9 +112,9 @@ export const runDiffieHellmanClientTest = async (logger: Logger) => {
 
 
   logger.logCenter(
-    logger.makeColor([128,128,0],
-      logger.makeSize(30,
-        logger.makeBorder(`DiffieHellmanClient test`))));
+    Logger.makeColor([128,128,0],
+      Logger.makeSize(30,
+        Logger.makeBorder(`DiffieHellmanClient test`))));
 
 
 };

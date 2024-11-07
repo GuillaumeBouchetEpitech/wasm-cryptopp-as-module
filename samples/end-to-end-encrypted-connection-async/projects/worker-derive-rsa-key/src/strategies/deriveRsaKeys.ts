@@ -31,11 +31,12 @@ export const deriveRsaKeys = async (data: any): Promise<DeriveRsaKeys.IMsgDerive
     // derive a bigger key from password (300bytes)
 
     const mySalt = "my salt";
-    const myINfo = "my info";
+    const myInfo = "my info";
+    // totalToDerive(332) = entropy(100) + nonce(100) + personalization(100) + ivValue(32)
     const k_size = 332;
 
     secureContext._data.derivedKey = wasmModule.deriveSha256HexStrKeyFromHexStrData(
-      secureContext._data.password, mySalt, myINfo, k_size
+      secureContext._data.password, mySalt, myInfo, k_size
     );
 
 
@@ -53,7 +54,10 @@ export const deriveRsaKeys = async (data: any): Promise<DeriveRsaKeys.IMsgDerive
       secureContext.prng = undefined;
     }
 
-    secureContext.prng = new wasmModule.HashDrbgRandomGeneratorJs(secureContext._data.entropy, secureContext._data.nonce, secureContext._data.personalization);
+    secureContext.prng = new wasmModule.HashDrbgRandomGeneratorJs(
+      secureContext._data.entropy,
+      secureContext._data.nonce,
+      secureContext._data.personalization);
   }
 
   // use random generator to generate private/public RSA keys

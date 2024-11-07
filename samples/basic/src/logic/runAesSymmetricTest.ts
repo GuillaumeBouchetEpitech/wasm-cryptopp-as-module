@@ -9,9 +9,9 @@ export const runAesSymmetricTest = async (logger: Logger) => {
   const wasmModule = CrytpoppWasmModule.get();
 
   logger.logCenter(
-    logger.makeColor([128,128,0],
-      logger.makeSize(30,
-        logger.makeBorder("AesSymmetricCipher test"))));
+    Logger.makeColor([128,128,0],
+      Logger.makeSize(30,
+        Logger.makeBorder("AesSymmetricCipher test"))));
 
   //
   //
@@ -24,7 +24,7 @@ export const runAesSymmetricTest = async (logger: Logger) => {
   const ivHexStr = prng.getRandomHexStr(16);
   prng.delete();
 
-  logger.logCenter(logger.makeBorder("AesSymmetricCipher A: initialize"));
+  logger.logCenter(Logger.makeBorder("AesSymmetricCipher A: initialize"));
   logger.alignedLog('left', "create the AES Symmetric Cipher A");
   const aesEncryptCipherA = new wasmModule.AesSymmetricCipherJs();
   logger.alignedLog('left', "initialize the AES Symmetric Cipher A");
@@ -35,7 +35,7 @@ export const runAesSymmetricTest = async (logger: Logger) => {
     logger.alignedLog('left', `initialized (${elapsed}ms)`);
   });
 
-  logger.logCenter(logger.makeBorder("AesSymmetricCipher B: initialize"));
+  logger.logCenter(Logger.makeBorder("AesSymmetricCipher B: initialize"));
   logger.alignedLog('right', "create the AES Symmetric Cipher B");
   const aesEncryptCipherB = new wasmModule.AesSymmetricCipherJs();
   logger.alignedLog('right', "initialize the AES Symmetric Cipher B");
@@ -50,11 +50,11 @@ export const runAesSymmetricTest = async (logger: Logger) => {
   //
   // encrypt
 
-  logger.logCenter(logger.makeBorder("AesSymmetricCipher A: encrypt payload"));
+  logger.logCenter(Logger.makeBorder("AesSymmetricCipher A: encrypt payload"));
 
   const inputStr = "This is my plain text message....";
 
-  logger.alignedLog('left', `original payload:  "${logger.makeColor([64,128+64,64], inputStr)}"`);
+  logger.alignedLog('left', `original payload:  "${Logger.makeColor([64,128+64,64], inputStr)}"`);
 
   const inputHexStr = wasmModule.utf8ToHex(inputStr);
 
@@ -72,7 +72,7 @@ export const runAesSymmetricTest = async (logger: Logger) => {
   //
   // decrypt
 
-  logger.logCenter(logger.makeBorder("AesSymmetricCipher B: decrypt payload"));
+  logger.logCenter(Logger.makeBorder("AesSymmetricCipher B: decrypt payload"));
 
   logger.alignedLog('right', `encrypted payload:`);
   printHexadecimalStrings(logger, encodedHexStr, 32, 'right');
@@ -86,18 +86,18 @@ export const runAesSymmetricTest = async (logger: Logger) => {
 
   const recoveredStr = wasmModule.hexToUtf8(decodedHexStr)
 
-  logger.alignedLog('right', `decrypted payload: "${logger.makeColor([128,128,255], recoveredStr)}"`);
-  logger.alignedLog('right', `original payload:  "${logger.makeColor([64,128+64,64], inputStr)}"`);
+  logger.alignedLog('right', `decrypted payload: "${Logger.makeColor([128,128,255], recoveredStr)}"`);
+  logger.alignedLog('right', `original payload:  "${Logger.makeColor([64,128+64,64], inputStr)}"`);
 
-  logger.logCenter(logger.makeBorder("Verification"));
+  logger.logCenter(Logger.makeBorder("Verification"));
 
   if (recoveredStr === inputStr) {
     logger.alignedLog('center', `
-      ${logger.makeBorder(logger.makeColor([128, 255, 128], " => SUCCESS: ENCRYPTED PAYLOAD WAS RECOVERED!"))}
+      ${Logger.makeBorder(Logger.makeColor([128, 255, 128], " => SUCCESS: ENCRYPTED PAYLOAD WAS RECOVERED!"))}
     `);
   } else {
     logger.alignedLog('center', `
-      ${logger.makeBorder(logger.makeColor([255, 128, 128], " => FAILURE: ENCRYPTED PAYLOAD WAS NOT RECOVERED!"))}
+      ${Logger.makeBorder(Logger.makeColor([255, 128, 128], " => FAILURE: ENCRYPTED PAYLOAD WAS NOT RECOVERED!"))}
     `);
   }
 
@@ -110,8 +110,8 @@ export const runAesSymmetricTest = async (logger: Logger) => {
 
 
   logger.logCenter(
-    logger.makeColor([128,128,0],
-      logger.makeSize(30,
-        logger.makeBorder("AesSymmetricCipher test"))));
+    Logger.makeColor([128,128,0],
+      Logger.makeSize(30,
+        Logger.makeBorder("AesSymmetricCipher test"))));
 
 };

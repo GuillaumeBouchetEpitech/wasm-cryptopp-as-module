@@ -111,9 +111,10 @@ const deriveRsaKeys = async (data) => {
         secureContext._data.password = data.password;
         // derive a bigger key from password (300bytes)
         const mySalt = "my salt";
-        const myINfo = "my info";
+        const myInfo = "my info";
+        // totalToDerive(332) = entropy(100) + nonce(100) + personalization(100) + ivValue(32)
         const k_size = 332;
-        secureContext._data.derivedKey = wasmModule.deriveSha256HexStrKeyFromHexStrData(secureContext._data.password, mySalt, myINfo, k_size);
+        secureContext._data.derivedKey = wasmModule.deriveSha256HexStrKeyFromHexStrData(secureContext._data.password, mySalt, myInfo, k_size);
         secureContext._data.entropy = secureContext._data.derivedKey.slice(0, 100);
         secureContext._data.nonce = secureContext._data.derivedKey.slice(100, 200);
         secureContext._data.personalization = secureContext._data.derivedKey.slice(200, 300);

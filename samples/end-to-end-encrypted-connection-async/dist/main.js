@@ -17,13 +17,19 @@ class Logger {
         this._parentElement = parentElement;
         this._clear();
     }
-    makeBorder(inStr) {
+    static makeBorder(inStr) {
         return `<span style="padding: 10px; margin: 10px; border: 3px solid; border-color: rgb(64, 64, 64); line-height: 5.8;">${inStr}</span>`;
     }
-    makeColor(inColor, inStr) {
+    // makeColor(inColor: [number, number, number], inStr: string) {
+    //   return Logger.makeColor(inColor, inStr);
+    // }
+    static makeColor(inColor, inStr) {
         return `<span style="color: rgb(${inColor[0]}, ${inColor[1]}, ${inColor[2]});">${inStr}</span>`;
     }
-    makeSize(inSize, inStr) {
+    // makeSize(inSize: number, inStr: string) {
+    //   return Logger.makeSize(inSize, inStr);
+    // }
+    static makeSize(inSize, inStr) {
         return `<span style="font-size: ${inSize}px;">${inStr}</span>`;
     }
     alignedLog(align, ...args) {
@@ -83,7 +89,7 @@ const printHexadecimalStrings$1 = (logger, inHexStr, inStep, inAlign) => {
         let currText = currLine;
         if (index > 0)
             currText = currText.padEnd(inStep, '_');
-        const coloredText = logger.makeColor([128, 128, 64], currText);
+        const coloredText = Logger.makeColor([128, 128, 64], currText);
         switch (inAlign) {
             case "left": {
                 logger.alignedLog(inAlign, ` => {${index.toString().padStart(3, '_')} / ${strSize}} ${coloredText}`);
@@ -429,7 +435,9 @@ class AsyncSecureClient {
     _diffieHellmanWorker;
     _deriveRsaKeysWorker;
     _rsaKeyPair;
+    // AesSymmetricCipherJs -> AES CBC
     // private _aesSymmetricCipher: wasmCryptoppJs.AesSymmetricCipherJs;
+    // AesStreamCipherJs -> AES CTR
     _aesStreamCipher;
     constructor(password, inCommunication, inOnLogging) {
         this._password = password;
@@ -487,10 +495,16 @@ class AsyncSecureClient {
         }
         this._log("signing our public key for the peer");
         const signedPublicKey = this._rsaKeyPair.signPayloadToHexStr(this._diffieHellmanWorker.publicKey);
+        this._log(Logger.makeColor([128, 128 + 64, 128], `here by signing the payload with the key only know from`));
+        this._log(Logger.makeColor([128, 128 + 64, 128], `us and our peer, we ensure that we are talking to`));
+        this._log(Logger.makeColor([128, 128 + 64, 128], `our peer and only to them, meaning no bad actor/machine`));
+        this._log(Logger.makeColor([128, 128 + 64, 128], `in the middle can usurp the identity of our peer and listen`));
         this._log("sending our signed public key to the peer");
         const payload = {
             signedPublicKey: signedPublicKey,
         };
+        // this._log(Logger.makeColor([128,128 + 64,128], Logger.makeSize(25, `input password: "${this._password}"`)));
+        // this._log(Logger.makeColor([128,128 + 64,128], `input password: "${this._password}"`));
         this._communication.send(JSON.stringify({
             type: MessageTypes.SecurityRequest,
             payload: JSON.stringify(payload),
@@ -589,6 +603,10 @@ class AsyncSecureClient {
                     }
                     this._log("verifying signed public key from the peer");
                     const verifiedPublicKey = this._rsaKeyPair.verifyHexStrPayloadToStr(jsonPayload.signedPublicKey);
+                    this._log(Logger.makeColor([128, 128 + 64, 128], `here we verify the signed key from our peer, by doing so we can`));
+                    this._log(Logger.makeColor([128, 128 + 64, 128], `confirm the peer is someone that used the same password only known`));
+                    this._log(Logger.makeColor([128, 128 + 64, 128], `from us and our peer(s), which is vital to prevent someone`));
+                    this._log(Logger.makeColor([128, 128 + 64, 128], `listening in the middle (bad actors)`));
                     await this._computeDiffieHellmanSharedSecret(verifiedPublicKey);
                     await this._initializeAesSymmetricCipher();
                     this._EncryptedCommunicationState = EncryptedCommunicationState.ready;
@@ -597,6 +615,10 @@ class AsyncSecureClient {
                     }
                     this._log("signing our public key for the peer");
                     const signedPublicKey = this._rsaKeyPair.signPayloadToHexStr(this._diffieHellmanWorker.publicKey);
+                    this._log(Logger.makeColor([128, 128 + 64, 128], `here by signing the payload with the key only know from`));
+                    this._log(Logger.makeColor([128, 128 + 64, 128], `us and our peer, we ensure that we are talking to`));
+                    this._log(Logger.makeColor([128, 128 + 64, 128], `our peer and only to them, meaning no bad actor/machine`));
+                    this._log(Logger.makeColor([128, 128 + 64, 128], `in the middle can usurp the identity of our peer and listen`));
                     this._log("sending our signed public key to the peer");
                     const payload = {
                         signedPublicKey: signedPublicKey,
@@ -623,6 +645,10 @@ class AsyncSecureClient {
                     }
                     this._log("verifying signed public key of the peer");
                     const verifiedPublicKey = this._rsaKeyPair.verifyHexStrPayloadToStr(jsonPayload.signedPublicKey);
+                    this._log(Logger.makeColor([128, 128 + 64, 128], `here we verify the signed key from our peer, by doing so we can`));
+                    this._log(Logger.makeColor([128, 128 + 64, 128], `confirm the peer is someone that used the same password only known`));
+                    this._log(Logger.makeColor([128, 128 + 64, 128], `from us and our peer(s), which is vital to prevent someone`));
+                    this._log(Logger.makeColor([128, 128 + 64, 128], `listening in the middle (bad actors)`));
                     await this._computeDiffieHellmanSharedSecret(verifiedPublicKey);
                     await this._initializeAesSymmetricCipher();
                     this._log("connection now confirmed secure");
@@ -662,8 +688,10 @@ class AsyncSecureClient {
         const keySize = 1024 * 1; // faster for the demo but unsafe
         this._log("------------------------------------");
         this._log(`Derive Rsa Keys`);
-        this._log(`input password: "${this._password}"`);
+        this._log(Logger.makeColor([128, 128 + 64, 128], Logger.makeSize(30, `input password: "${this._password}"`)));
         this._log(`input key size: ${keySize}`);
+        this._log(Logger.makeColor([128, 128 + 64, 128], `(key size is likely smaller for this demo)`));
+        this._log(Logger.makeColor([128, 128 + 64, 128], `(safe key size at the moment of writing is at least >=${1024 * 3})`));
         let elapsedTime = await this._deriveRsaKeysWorker.deriveRsaKeys(this._password, keySize);
         this._log("output privateKeyPem");
         this._log(this._deriveRsaKeysWorker.privateKeyPem);
@@ -671,6 +699,8 @@ class AsyncSecureClient {
         this._log(this._deriveRsaKeysWorker.publicKeyPem);
         this._log("output ivValue");
         printHexadecimalStrings(this._log.bind(this), this._deriveRsaKeysWorker.ivValue, 32);
+        this._log(Logger.makeColor([128, 128 + 64, 128], `those value will be the same for the peer`));
+        this._log(Logger.makeColor([128, 128 + 64, 128], `since the same password was used`));
         this._log(`Derive Rsa Keys done (elapsedTime: ${elapsedTime}ms)`);
         this._log("------------------------------------");
         this._rsaKeyPair = this._deriveRsaKeysWorker.makeRsaKeyPair();
@@ -740,13 +770,13 @@ const k_securityMessagetext = [
 ].join("\n");
 const logSeparator = (logger, inAlign, jsonMsg) => {
     if (jsonMsg.type === MessageTypes.PlainMessage) {
-        logger.alignedLog(inAlign, logger.makeColor([128, 64, 64], k_plainMessagetext));
+        logger.alignedLog(inAlign, Logger.makeColor([128, 64, 64], k_plainMessagetext));
     }
     else if (jsonMsg.type === MessageTypes.EncryptedMessage) {
-        logger.alignedLog(inAlign, logger.makeColor([64, 128, 64], k_encryptedMessagetext));
+        logger.alignedLog(inAlign, Logger.makeColor([64, 128, 64], k_encryptedMessagetext));
     }
     else if (jsonMsg.type === MessageTypes.SecurityRequest || jsonMsg.type === MessageTypes.SecurityResponse) {
-        logger.alignedLog(inAlign, logger.makeColor([64, 128, 64], k_securityMessagetext));
+        logger.alignedLog(inAlign, Logger.makeColor([64, 128, 64], k_securityMessagetext));
     }
 };
 const logMessagePayload = (logger, inAlign, inText) => {
@@ -754,11 +784,11 @@ const logMessagePayload = (logger, inAlign, inText) => {
     if (isMessage(jsonMsg)) {
         logSeparator(logger, inAlign, jsonMsg);
         logger.alignedLog(inAlign, `type:`);
-        logger.alignedLog(inAlign, logger.makeColor([128 + 64, 128 + 64, 64], `"${jsonMsg.type}"`));
+        logger.alignedLog(inAlign, Logger.makeColor([128 + 64, 128 + 64, 64], `"${jsonMsg.type}"`));
         switch (jsonMsg.type) {
             case MessageTypes.PlainMessage:
                 logger.alignedLog(inAlign, `payload:`);
-                logger.alignedLog(inAlign, logger.makeColor([128 + 64, 64, 64], logger.makeSize(25, `"${jsonMsg.payload}"`)));
+                logger.alignedLog(inAlign, Logger.makeColor([128 + 64, 64, 64], Logger.makeSize(25, `"${jsonMsg.payload}"`)));
                 break;
             default: {
                 try {
@@ -834,9 +864,9 @@ class FakeWebSocket {
 }
 
 const runLogic = async (logger) => {
-    logger.logCenter(logger.makeColor([128, 128, 0], logger.makeSize(30, logger.makeBorder("Secure End To End Connection Test"))));
-    const clientA_str = logger.makeColor([128 + 64, 128, 128], "Client A");
-    const clientB_str = logger.makeColor([128, 128, 128 + 64], "Client B");
+    logger.logCenter(Logger.makeColor([128, 128, 0], Logger.makeSize(30, Logger.makeBorder("Secure End To End Connection Test"))));
+    const clientA_str = Logger.makeColor([128 + 64, 128, 128], "Client A");
+    const clientB_str = Logger.makeColor([128, 128, 128 + 64], "Client B");
     //
     //
     //
@@ -845,7 +875,7 @@ const runLogic = async (logger) => {
     //
     //
     //
-    logger.logCenter(logger.makeBorder(`initialize`));
+    logger.logCenter(Logger.makeBorder(`initialize`));
     const onLogA = (inLogMsg, inLogHeader) => {
         if (inLogHeader) {
             logger.logLeft(`${inLogHeader} ${inLogMsg}`);
@@ -871,12 +901,12 @@ const runLogic = async (logger) => {
     const clientB = new AsyncSecureClient(knownPassword, fakeWebSocketB, onLogB);
     clientA.onReceive(async (inText) => {
         logger.alignedLog("left", `${clientA_str} received:`);
-        logger.alignedLog("left", logger.makeColor([64, 128 + 64, 64], logger.makeSize(25, `"${inText}"`)));
+        logger.alignedLog("left", Logger.makeColor([64, 128 + 64, 64], Logger.makeSize(25, `"${inText}"`)));
         logger.alignedLog("left", `\n`);
     });
     clientB.onReceive(async (inText) => {
         logger.alignedLog("right", `${clientB_str} received:`);
-        logger.alignedLog("right", logger.makeColor([64, 128 + 64, 64], logger.makeSize(25, `"${inText}"`)));
+        logger.alignedLog("right", Logger.makeColor([64, 128 + 64, 64], Logger.makeSize(25, `"${inText}"`)));
         logger.alignedLog("right", `\n`);
     });
     await Promise.all([
@@ -886,10 +916,10 @@ const runLogic = async (logger) => {
     //
     //
     //
-    logger.logCenter(logger.makeBorder(`[unencrypted] Client A send to Client B`));
+    logger.logCenter(Logger.makeBorder(`[unencrypted] Client A send to Client B`));
     logger.logLeft(`${clientA_str} now sending a message:`);
     const messageToSend = "Hello, is this safe?";
-    logger.alignedLog("left", logger.makeColor([64, 128 + 64, 64], logger.makeSize(25, `"${messageToSend}"`)));
+    logger.alignedLog("left", Logger.makeColor([64, 128 + 64, 64], Logger.makeSize(25, `"${messageToSend}"`)));
     logger.log(`\n`);
     clientA.send(messageToSend);
     while (fakeWebSocketA.hasMessageToSend() ||
@@ -897,10 +927,10 @@ const runLogic = async (logger) => {
         await fakeWebSocketA.pipeMessages(fakeWebSocketB);
         await fakeWebSocketB.pipeMessages(fakeWebSocketA);
     }
-    logger.logCenter(logger.makeBorder(`[unencrypted] Client B send to Client A`));
+    logger.logCenter(Logger.makeBorder(`[unencrypted] Client B send to Client A`));
     logger.logRight(`${clientB_str} now sending a message:`);
     const messageToReply = "Hi, no... it isn't safe...";
-    logger.alignedLog("right", logger.makeColor([64, 128 + 64, 64], logger.makeSize(25, `"${messageToReply}"`)));
+    logger.alignedLog("right", Logger.makeColor([64, 128 + 64, 64], Logger.makeSize(25, `"${messageToReply}"`)));
     logger.log(`\n`);
     clientB.send(messageToReply);
     while (fakeWebSocketA.hasMessageToSend() ||
@@ -908,10 +938,10 @@ const runLogic = async (logger) => {
         await fakeWebSocketA.pipeMessages(fakeWebSocketB);
         await fakeWebSocketB.pipeMessages(fakeWebSocketA);
     }
-    logger.logCenter(logger.makeBorder(`[unencrypted] Client A send to Client B`));
+    logger.logCenter(Logger.makeBorder(`[unencrypted] Client A send to Client B`));
     logger.logLeft(`${clientA_str} now sending a message:`);
     const messageToSendAgain = "Let's use our usual password...";
-    logger.alignedLog("left", logger.makeColor([64, 128 + 64, 64], logger.makeSize(25, `"${messageToSendAgain}"`)));
+    logger.alignedLog("left", Logger.makeColor([64, 128 + 64, 64], Logger.makeSize(25, `"${messageToSendAgain}"`)));
     logger.log(`\n`);
     clientA.send(messageToSendAgain);
     while (fakeWebSocketA.hasMessageToSend() ||
@@ -921,34 +951,60 @@ const runLogic = async (logger) => {
     }
     //
     //
-    logger.logCenter(logger.makeBorder(`Client A send request for encryption to Client B`));
+    logger.logCenter(Logger.makeBorder(`Client A send request for encryption to Client B`));
     await clientA.makeSecure();
     while (fakeWebSocketA.hasMessageToSend() ||
         fakeWebSocketB.hasMessageToSend()) {
         await fakeWebSocketA.pipeMessages(fakeWebSocketB);
         await fakeWebSocketB.pipeMessages(fakeWebSocketA);
     }
-    logger.logCenter(logger.makeBorder(`Client B sent a reply for encryption to Client B`));
-    logger.logCenter(logger.makeBorder(`Both Client A and Client B can now encrypt/decrypt each other messages`));
+    logger.logCenter(Logger.makeBorder(`Client B sent a reply for encryption to Client B`));
+    logger.logCenter(Logger.makeBorder(`Both Client A and Client B can now encrypt/decrypt each other messages`));
     //
-    logger.logCenter(logger.makeBorder(`[encrypted] Client A send to Client B`));
+    logger.logCenter(Logger.makeBorder(`[encrypted] Client A send to Client B`));
     logger.logLeft(`${clientA_str} now sending a message:`);
-    const newMessageToSend = "Let's try again, safe now?";
-    logger.alignedLog("left", logger.makeColor([64, 128 + 64, 64], logger.makeSize(25, `"${newMessageToSend}"`)));
+    // const newMessageToSend = "Let's try again, safe now?";
+    const newMessageToSend = `
+    Let's try again, safe now?
+    I mean... we only shared a DH public key,
+    that stuff is not compromising
+  `.split('\n').map(val => val.trim()).filter(val => val.length > 0).join('<br>');
+    logger.alignedLog("left", Logger.makeColor([64, 128 + 64, 64], Logger.makeSize(25, `"${newMessageToSend}"`)));
     logger.log(`\n`);
     clientA.send(newMessageToSend);
     await fakeWebSocketA.pipeMessages(fakeWebSocketB);
-    logger.logCenter(logger.makeBorder(`[encrypted] Client B send to Client A`));
+    logger.logCenter(Logger.makeBorder(`[encrypted] Client B send to Client A`));
     logger.logRight(`${clientB_str} now sending a message:`);
-    const newMessageToReply = "The key was public,<br>but signed it with our password,<br>it proves it was from you and no one else,<br>I'd say we're pretty safe right now :)";
-    logger.alignedLog("right", logger.makeColor([64, 128 + 64, 64], logger.makeSize(25, `"${newMessageToReply}"`)));
+    const newMessageToReply = `
+    (MIM: man in the middle protection)
+    I'd say we're pretty safe right now :),
+    ...
+    that public key was publicly shared on this
+    network, but since we signed it with our secret
+    password that is only known to us we have the
+    proof that no one is impersonating any of us, which
+    means any of what we share here cannot be understood
+    by anyone that might listen.
+  `.split('\n').map(val => val.trim()).filter(val => val.length > 0).join('<br>');
+    logger.alignedLog("right", Logger.makeColor([64, 128 + 64, 64], Logger.makeSize(25, `"${newMessageToReply}"`)));
     logger.log(`\n`);
     clientB.send(newMessageToReply);
     await fakeWebSocketB.pipeMessages(fakeWebSocketA);
-    logger.logCenter(logger.makeBorder(`[encrypted] Client A send to Client B`));
+    logger.logCenter(Logger.makeBorder(`[encrypted] Client A send to Client B`));
     logger.logLeft(`${clientA_str} now sending a message:`);
-    const newMessageToSendAgain = "Yup, And we can always get a new<br>randomly encrypted channel like this<br>one from the same password again";
-    logger.alignedLog("left", logger.makeColor([64, 128 + 64, 64], logger.makeSize(25, `"${newMessageToSendAgain}"`)));
+    // const newMessageToSendAgain = "Yup, And we can always get a new<br>randomly encrypted channel like this<br>one from the same password again";
+    const newMessageToSendAgain = `
+    (PFS: perfect forward secrecy)
+    There is still a risk of someone breaking the
+    encryption assuming they have several years
+    worth of super computing power at their disposal
+    ...
+    But we can always periodically get a new randomly
+    encrypted channel like this one from the same
+    password again, which would multiply the number
+    of years needed to break it all... :)
+  `.split('\n').map(val => val.trim()).filter(val => val.length > 0).join('<br>');
+    logger.alignedLog("left", Logger.makeColor([64, 128 + 64, 64], Logger.makeSize(25, `"${newMessageToSendAgain}"`)));
     logger.log(`\n`);
     clientA.send(newMessageToSendAgain);
     await fakeWebSocketA.pipeMessages(fakeWebSocketB);
@@ -957,7 +1013,7 @@ const runLogic = async (logger) => {
     //
     clientA.delete();
     clientB.delete();
-    logger.logCenter(logger.makeColor([128, 128, 0], logger.makeSize(30, logger.makeBorder("Secure End To End Connection Test"))));
+    logger.logCenter(Logger.makeColor([128, 128, 0], Logger.makeSize(30, Logger.makeBorder("Secure End To End Connection Test"))));
 };
 
 /// <reference no-default-lib="true"/>
@@ -973,7 +1029,7 @@ window.onload = async () => {
     const loggerOutput = findOrFailHtmlElement("#loggerOutput");
     const logger = new Logger(loggerOutput);
     logger.logCenter("page loaded");
-    logger.logCenter(logger.makeColor([255, 0, 0], "\n\nSTART\n\n"));
+    logger.logCenter(Logger.makeColor([255, 0, 0], "\n\nSTART\n\n"));
     logger.logCenter(" loading worker-obtain-cipher-key");
     //
     //
@@ -991,5 +1047,5 @@ window.onload = async () => {
     //
     //
     const testEndTime = Date.now();
-    logger.logCenter(logger.makeColor([255, 0, 0], `\n\nSTOP (${testEndTime - testStartTime}ms)\n\n`));
+    logger.logCenter(Logger.makeColor([255, 0, 0], `\n\nSTOP (${testEndTime - testStartTime}ms)\n\n`));
 };

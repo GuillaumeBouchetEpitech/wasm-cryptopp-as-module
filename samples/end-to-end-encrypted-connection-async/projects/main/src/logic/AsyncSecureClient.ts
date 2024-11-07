@@ -1,7 +1,7 @@
 
 import wasmCryptoppJs from "wasmCryptoppJs";
 
-import { CrytpoppWasmModule } from "@local-framework";
+import { CrytpoppWasmModule, Logger } from "@local-framework";
 
 import { ICommunication, onReceiveCallback } from "./internals/FakeWebSocket";
 
@@ -122,10 +122,18 @@ export class AsyncSecureClient {
 
     const signedPublicKey = this._rsaKeyPair.signPayloadToHexStr(this._diffieHellmanWorker.publicKey);
 
+    this._log(Logger.makeColor([128,128 + 64,128], `here by signing the payload with the key only know from`));
+    this._log(Logger.makeColor([128,128 + 64,128], `us and our peer, we ensure that we are talking to`));
+    this._log(Logger.makeColor([128,128 + 64,128], `our peer and only to them, meaning no bad actor/machine`));
+    this._log(Logger.makeColor([128,128 + 64,128], `in the middle can usurp the identity of our peer and listen`));
+
     this._log("sending our signed public key to the peer");
     const payload: SecurityPayload = {
       signedPublicKey: signedPublicKey,
     };
+
+    // this._log(Logger.makeColor([128,128 + 64,128], Logger.makeSize(25, `input password: "${this._password}"`)));
+    // this._log(Logger.makeColor([128,128 + 64,128], `input password: "${this._password}"`));
 
     this._communication.send(JSON.stringify({
       type: MessageTypes.SecurityRequest,
@@ -264,6 +272,11 @@ export class AsyncSecureClient {
         this._log("verifying signed public key from the peer");
         const verifiedPublicKey = this._rsaKeyPair.verifyHexStrPayloadToStr(jsonPayload.signedPublicKey);
 
+        this._log(Logger.makeColor([128,128 + 64,128], `here we verify the signed key from our peer, by doing so we can`));
+        this._log(Logger.makeColor([128,128 + 64,128], `confirm the peer is someone that used the same password only known`));
+        this._log(Logger.makeColor([128,128 + 64,128], `from us and our peer(s), which is vital to prevent someone`))
+        this._log(Logger.makeColor([128,128 + 64,128], `listening in the middle (bad actors)`));
+
         await this._computeDiffieHellmanSharedSecret(verifiedPublicKey);
         await this._initializeAesSymmetricCipher();
 
@@ -276,6 +289,11 @@ export class AsyncSecureClient {
         this._log("signing our public key for the peer");
 
         const signedPublicKey = this._rsaKeyPair.signPayloadToHexStr(this._diffieHellmanWorker.publicKey);
+
+        this._log(Logger.makeColor([128,128 + 64,128], `here by signing the payload with the key only know from`));
+        this._log(Logger.makeColor([128,128 + 64,128], `us and our peer, we ensure that we are talking to`));
+        this._log(Logger.makeColor([128,128 + 64,128], `our peer and only to them, meaning no bad actor/machine`));
+        this._log(Logger.makeColor([128,128 + 64,128], `in the middle can usurp the identity of our peer and listen`));
 
         this._log("sending our signed public key to the peer");
         const payload: SecurityPayload = {
@@ -311,6 +329,11 @@ export class AsyncSecureClient {
 
         this._log("verifying signed public key of the peer");
         const verifiedPublicKey = this._rsaKeyPair.verifyHexStrPayloadToStr(jsonPayload.signedPublicKey);
+
+        this._log(Logger.makeColor([128,128 + 64,128], `here we verify the signed key from our peer, by doing so we can`));
+        this._log(Logger.makeColor([128,128 + 64,128], `confirm the peer is someone that used the same password only known`));
+        this._log(Logger.makeColor([128,128 + 64,128], `from us and our peer(s), which is vital to prevent someone`))
+        this._log(Logger.makeColor([128,128 + 64,128], `listening in the middle (bad actors)`));
 
         await this._computeDiffieHellmanSharedSecret(verifiedPublicKey);
         await this._initializeAesSymmetricCipher();
@@ -368,8 +391,10 @@ export class AsyncSecureClient {
 
     this._log("------------------------------------");
     this._log(`Derive Rsa Keys`);
-    this._log(`input password: "${this._password}"`);
+    this._log(Logger.makeColor([128,128 + 64,128], Logger.makeSize(30, `input password: "${this._password}"`)));
     this._log(`input key size: ${keySize}`);
+    this._log(Logger.makeColor([128,128 + 64,128], `(key size is likely smaller for this demo)`));
+    this._log(Logger.makeColor([128,128 + 64,128], `(safe key size at the moment of writing is at least >=${1024*3})`));
 
     let elapsedTime = await this._deriveRsaKeysWorker.deriveRsaKeys(this._password, keySize);
 
@@ -379,6 +404,9 @@ export class AsyncSecureClient {
     this._log(this._deriveRsaKeysWorker.publicKeyPem!);
     this._log("output ivValue");
     printHexadecimalStrings(this._log.bind(this), this._deriveRsaKeysWorker.ivValue!, 32);
+
+    this._log(Logger.makeColor([128,128 + 64,128], `those value will be the same for the peer`));
+    this._log(Logger.makeColor([128,128 + 64,128], `since the same password was used`));
 
     this._log(`Derive Rsa Keys done (elapsedTime: ${elapsedTime}ms)`);
     this._log("------------------------------------");

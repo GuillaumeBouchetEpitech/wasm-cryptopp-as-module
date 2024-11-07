@@ -19,6 +19,19 @@ It should be possible to expose most Crypto++ capabilities.
 
 ### Current Capabilities
 
+```mermaid
+
+mindmap
+  cloud((wasm<br>Cryptopp))
+    ["AES<br>=#62; encrypt()<br>=#62; decrypt()"]
+      ["symmetric cipher (CBC)"]
+      ["stream cipher (CTR)"]
+    ["Diffie Hellman<br>=#62; generate keys<br>=#62; compute shared secret"]
+    ["Auto Seeded<br>Random Pool"]
+    ["RSA<br>=#62; generate random<br>private keys<br>=#62; PEM import/export of private/public keys<br>=#62; sign with private keys<br>=#62; verify with public keys"]
+
+```
+
 #### AES (CBC) Symmetric Cipher:
   * encrypt
   * decrypt

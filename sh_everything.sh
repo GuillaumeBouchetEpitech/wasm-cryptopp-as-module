@@ -38,7 +38,7 @@ echo ""
 DIR_THIRDPARTIES=$PWD/thirdparties
 DIR_DEPENDENCIES=$DIR_THIRDPARTIES/dependencies
 
-mkdir -p $DIR_DEPENDENCIES
+mkdir -p "$DIR_DEPENDENCIES"
 
 #
 #
@@ -51,23 +51,23 @@ echo "ensuring the cpp to wasm compiler (emsdk) is installed"
 EMSDK_VERSION=3.1.26
 
 sh sh_install_one_git_thirdparty.sh \
-  $DIR_DEPENDENCIES \
+  "$DIR_DEPENDENCIES" \
   "EMSDK" \
   "emsdk" \
   "emscripten-core/emsdk" \
   $EMSDK_VERSION \
   "not-interactive"
 
-cd $DIR_DEPENDENCIES/emsdk
+cd "$DIR_DEPENDENCIES/emsdk" || exit 1
 
 ./emsdk install $EMSDK_VERSION
 ./emsdk activate --embedded $EMSDK_VERSION
 
-. ./emsdk_env.sh
+. "./emsdk_env.sh"
 
 # em++ --clear-cache
 
-cd $DIR_ROOT
+cd "$DIR_ROOT" || exit 1
 
 
 #
@@ -79,7 +79,7 @@ cd $DIR_ROOT
 echo "ensuring the thirdparties are installed"
 
 sh sh_install_one_git_thirdparty.sh \
-  $DIR_DEPENDENCIES \
+  "$DIR_DEPENDENCIES" \
   "CRYPTOPP" \
   "cryptopp" \
   "weidai11/cryptopp" \
@@ -87,14 +87,14 @@ sh sh_install_one_git_thirdparty.sh \
   "not-interactive"
 
 sh sh_install_one_git_thirdparty.sh \
-  $DIR_DEPENDENCIES \
+  "$DIR_DEPENDENCIES" \
   "CRYPTOPP_PEM" \
   "cryptopp-pem" \
   "noloader/cryptopp-pem" \
   "CRYPTOPP_8_2_0" \
   "not-interactive"
 
-tree -L 1 $DIR_DEPENDENCIES
+tree -L 1 "$DIR_DEPENDENCIES"
 
 #
 #
@@ -103,7 +103,7 @@ tree -L 1 $DIR_DEPENDENCIES
 #
 
 echo "building thirdparties libraries"
-cd $DIR_THIRDPARTIES
+cd "$DIR_THIRDPARTIES" || exit 1
 
 make build_mode="release" build_platform="web-wasm" all -j8
 
@@ -113,7 +113,7 @@ yes)
   ;;
 esac
 
-cd $DIR_ROOT
+cd "$DIR_ROOT" || exit 1
 
 #
 #

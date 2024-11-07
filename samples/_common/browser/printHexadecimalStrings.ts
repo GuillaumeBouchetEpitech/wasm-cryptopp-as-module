@@ -11,7 +11,7 @@ export const printHexadecimalStrings = (logger: Logger, inHexStr: string, inStep
     let currText = currLine;
     if (index > 0)
       currText = currText.padEnd(inStep, '_');
-    const coloredText = logger.makeColor([128,128,64], currText);
+    const coloredText = Logger.makeColor([128,128,64], currText);
 
     switch (inAlign) {
       case "left": {

@@ -27,11 +27,11 @@ const k_securityMessagetext = [
 const logSeparator = (logger: Logger, inAlign: "left" | "center" | "right", jsonMsg: Message) => {
 
   if (jsonMsg.type === MessageTypes.PlainMessage) {
-    logger.alignedLog(inAlign, logger.makeColor([128,64,64], k_plainMessagetext));
+    logger.alignedLog(inAlign, Logger.makeColor([128,64,64], k_plainMessagetext));
   } else if (jsonMsg.type === MessageTypes.EncryptedMessage) {
-    logger.alignedLog(inAlign, logger.makeColor([64,128,64], k_encryptedMessagetext));
+    logger.alignedLog(inAlign, Logger.makeColor([64,128,64], k_encryptedMessagetext));
   } else if (jsonMsg.type === MessageTypes.SecurityRequest || jsonMsg.type === MessageTypes.SecurityResponse) {
-    logger.alignedLog(inAlign, logger.makeColor([64,128,64], k_securityMessagetext));
+    logger.alignedLog(inAlign, Logger.makeColor([64,128,64], k_securityMessagetext));
   }
 };
 
@@ -44,12 +44,12 @@ export const logMessagePayload = (logger: Logger, inAlign: "left" | "center" | "
     logSeparator(logger, inAlign, jsonMsg);
 
     logger.alignedLog(inAlign, `type:`);
-    logger.alignedLog(inAlign, logger.makeColor([128+64,128+64,64], `"${jsonMsg.type}"`));
+    logger.alignedLog(inAlign, Logger.makeColor([128+64,128+64,64], `"${jsonMsg.type}"`));
 
     switch (jsonMsg.type) {
       case MessageTypes.PlainMessage:
         logger.alignedLog(inAlign, `payload:`);
-        logger.alignedLog(inAlign, logger.makeColor([128+64,64,64], logger.makeSize(25, `"${jsonMsg.payload}"`)));
+        logger.alignedLog(inAlign, Logger.makeColor([128+64,64,64], Logger.makeSize(25, `"${jsonMsg.payload}"`)));
         break;
       default: {
 
