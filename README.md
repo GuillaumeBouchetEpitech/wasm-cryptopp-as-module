@@ -17,6 +17,24 @@ It should be possible to expose most Crypto++ capabilities.
 
 ---
 
+# Online Demo Link(s)
+
+**`/!\ important /!\`**
+
+### Demo 1: Password Based End To End Encryption
+http://guillaumebouchetepitech.github.io/wasm-cryptopp-as-module/samples/end-to-end-encrypted-connection-async/index.html
+
+### Demo 2: Derive RSA Keys
+http://guillaumebouchetepitech.github.io/wasm-cryptopp-as-module/samples/derive-rsa-keys-async/index.html
+
+### Demo 3: Diffie Hellman key exchange
+http://guillaumebouchetepitech.github.io/wasm-cryptopp-as-module/samples/diffie-hellman-key-exchange-async/index.html
+
+### Demo 4: All Features
+http://guillaumebouchetepitech.github.io/wasm-cryptopp-as-module/samples/basic/index.html
+
+**`/!\ important /!\`**
+
 ### Current Capabilities
 
 ```mermaid
@@ -54,24 +72,6 @@ mindmap
   * verify with public keys
 
 ---
-
-# Online Demo Link(s)
-
-**`/!\ important /!\`**
-
-## Demo 1: Password Based End To End Encryption
-http://guillaumebouchetepitech.github.io/wasm-cryptopp-as-module/samples/end-to-end-encrypted-connection-async/index.html
-
-## Demo 2: Derive RSA Keys
-http://guillaumebouchetepitech.github.io/wasm-cryptopp-as-module/samples/derive-rsa-keys-async/index.html
-
-## Demo 3: Diffie Hellman key exchange
-http://guillaumebouchetepitech.github.io/wasm-cryptopp-as-module/samples/diffie-hellman-key-exchange-async/index.html
-
-## Demo 4: All Features
-http://guillaumebouchetepitech.github.io/wasm-cryptopp-as-module/samples/basic/index.html
-
-**`/!\ important /!\`**
 
 # Diagrams
 
