@@ -18,6 +18,7 @@ export class CrytpoppWasmModule {
   }
 
   static async rawLoad() {
+    // @ts-ignore
     CrytpoppWasmModule._wasmModule = await wasmCryptoppJs({
       locateFile: (url: string) => {
         console.log(`url: "${url}"`);

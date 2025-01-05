@@ -122,9 +122,9 @@ export class AsyncSecureClient {
 
     const signedPublicKey = this._rsaKeyPair.signPayloadToHexStr(this._diffieHellmanWorker.publicKey);
 
-    this._log(Logger.makeColor([128,128 + 64,128], `here by signing the payload with the key only know from`));
+    this._log(Logger.makeColor([128,128 + 64,128], `here by signing the payload with the key only known from`));
     this._log(Logger.makeColor([128,128 + 64,128], `us and our peer, we ensure that we are talking to`));
-    this._log(Logger.makeColor([128,128 + 64,128], `our peer and only to them, meaning no bad actor/machine`));
+    this._log(Logger.makeColor([128,128 + 64,128], `our peer and only to them, meaning no bad actor`));
     this._log(Logger.makeColor([128,128 + 64,128], `in the middle can usurp the identity of our peer and listen`));
 
     this._log("sending our signed public key to the peer");
@@ -290,9 +290,9 @@ export class AsyncSecureClient {
 
         const signedPublicKey = this._rsaKeyPair.signPayloadToHexStr(this._diffieHellmanWorker.publicKey);
 
-        this._log(Logger.makeColor([128,128 + 64,128], `here by signing the payload with the key only know from`));
+        this._log(Logger.makeColor([128,128 + 64,128], `here by signing the payload with the key only known from`));
         this._log(Logger.makeColor([128,128 + 64,128], `us and our peer, we ensure that we are talking to`));
-        this._log(Logger.makeColor([128,128 + 64,128], `our peer and only to them, meaning no bad actor/machine`));
+        this._log(Logger.makeColor([128,128 + 64,128], `our peer and only to them, meaning no bad actor`));
         this._log(Logger.makeColor([128,128 + 64,128], `in the middle can usurp the identity of our peer and listen`));
 
         this._log("sending our signed public key to the peer");
