@@ -1,8 +1,10 @@
 
 #include "../DiffieHellmanClient.hpp"
+#include "../EllipticCurveDiffieHellmanClient.hpp"
 #include "../HashDrbgRandomGenerator.hpp"
 #include "../AutoSeededRandomPool.hpp"
 #include "../AesStreamCipher.hpp"
+#include "../AuthenticatedEncryption.hpp"
 #include "../AesSymmetricCipher.hpp"
 #include "../KeyDerivationScheme.hpp"
 #include "../RSAFeatures.hpp"
@@ -30,6 +32,14 @@ EMSCRIPTEN_BINDINGS(my_namespace) {
     .function("decryptFromHexStrAsHexStr", &AesStreamCipher::decryptFromHexStrAsHexStr)
     ;
 
+  emscripten::class_<AuthenticatedEncryption>("AuthenticatedEncryptionJs")
+    .constructor()
+    .function("initializeFromHexStr", &AuthenticatedEncryption::initializeFromHexStr)
+    .function("encryptFromHexStrAsHexStr", &AuthenticatedEncryption::encryptFromHexStrAsHexStr)
+    .function("decryptFromHexStrAsHexStr", &AuthenticatedEncryption::decryptFromHexStrAsHexStr)
+    ;
+
+
   emscripten::class_<AesSymmetricCipher>("AesSymmetricCipherJs")
     .constructor()
     .function("initializeFromHexStr", &AesSymmetricCipher::initializeFromHexStr)
@@ -46,6 +56,16 @@ EMSCRIPTEN_BINDINGS(my_namespace) {
     .function("computeSharedSecretFromHexStr", &DiffieHellmanClient::computeSharedSecretFromHexStr)
     .function("getPublicKeyAsHexStr", &DiffieHellmanClient::getPublicKeyAsHexStr)
     .function("getSharedSecretAsHexStr", &DiffieHellmanClient::getSharedSecretAsHexStr)
+    ;
+
+
+
+  emscripten::class_<EllipticCurveDiffieHellmanClient>("EllipticCurveDiffieHellmanClientJs")
+    .constructor()
+    .function("generateRandomKeys", &EllipticCurveDiffieHellmanClient::generateRandomKeys)
+    .function("computeSharedSecretFromHexStr", &EllipticCurveDiffieHellmanClient::computeSharedSecretFromHexStr)
+    .function("getPublicKeyAsHexStr", &EllipticCurveDiffieHellmanClient::getPublicKeyAsHexStr)
+    .function("getSharedSecretAsHexStr", &EllipticCurveDiffieHellmanClient::getSharedSecretAsHexStr)
     ;
 
 

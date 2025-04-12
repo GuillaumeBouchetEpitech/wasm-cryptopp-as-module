@@ -9,6 +9,7 @@ class CrytpoppWasmModule {
         await CrytpoppWasmModule.rawLoad();
     }
     static async rawLoad() {
+        // @ts-ignore
         CrytpoppWasmModule._wasmModule = await wasmCryptoppJs({
             locateFile: (url) => {
                 console.log(`url: "${url}"`);
@@ -66,7 +67,9 @@ const createNewSecureContext = () => {
     const keyStr = `${idVal}`;
     const wasmModule = CrytpoppWasmModule.get();
     _secureContextMap.set(keyStr, {
-        diffieHellmanClient: new wasmModule.DiffieHellmanClientJs(),
+        // diffieHellmanClient: new wasmModule.DiffieHellmanClientJs(),
+        autoSeededRandomPool: new wasmModule.AutoSeededRandomPoolJs(),
+        diffieHellmanClient: new wasmModule.EllipticCurveDiffieHellmanClientJs(),
         aesSymmetricCipher: new wasmModule.AesSymmetricCipherJs(),
     });
     return keyStr;
@@ -106,7 +109,8 @@ const generateDiffieHellmanKeysStrategy = async (data) => {
     //
     //
     const secureContext = getSecureContext(data.id);
-    secureContext.diffieHellmanClient.generateRandomKeysSimpler();
+    // secureContext.diffieHellmanClient.generateRandomKeysSimpler();
+    secureContext.diffieHellmanClient.generateRandomKeys(secureContext.autoSeededRandomPool);
     secureContext.publicKey = secureContext.diffieHellmanClient.getPublicKeyAsHexStr();
     //
     //

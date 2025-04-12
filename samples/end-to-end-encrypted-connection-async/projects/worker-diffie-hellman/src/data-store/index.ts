@@ -4,7 +4,8 @@ import wasmCryptoppJs from "wasmCryptoppJs";
 import { CrytpoppWasmModule } from "@local-worker-framework";
 
 export interface SecureContext {
-  diffieHellmanClient: wasmCryptoppJs.DiffieHellmanClientJs;
+  autoSeededRandomPool: wasmCryptoppJs.AutoSeededRandomPoolJs,
+  diffieHellmanClient: wasmCryptoppJs.EllipticCurveDiffieHellmanClientJs;
   aesSymmetricCipher: wasmCryptoppJs.AesSymmetricCipherJs;
   publicKey?: string;
   sharedSecret?: string;
@@ -21,7 +22,8 @@ export const createNewSecureContext = (): string => {
   const wasmModule = CrytpoppWasmModule.get()
 
   _secureContextMap.set(keyStr, {
-    diffieHellmanClient: new wasmModule.DiffieHellmanClientJs(),
+    autoSeededRandomPool: new wasmModule.AutoSeededRandomPoolJs(),
+    diffieHellmanClient: new wasmModule.EllipticCurveDiffieHellmanClientJs(),
     aesSymmetricCipher: new wasmModule.AesSymmetricCipherJs(),
   });
 

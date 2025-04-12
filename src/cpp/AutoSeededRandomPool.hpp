@@ -9,12 +9,14 @@
 // forward declaration
 class RSAPrivateKey;
 class DiffieHellmanClient;
+class EllipticCurveDiffieHellmanClient;
 
 class AutoSeededRandomPool
 {
 
   friend RSAPrivateKey;
   friend DiffieHellmanClient;
+  friend EllipticCurveDiffieHellmanClient;
 
 public:
   AutoSeededRandomPool();

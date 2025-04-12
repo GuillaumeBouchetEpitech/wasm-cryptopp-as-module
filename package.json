@@ -6,7 +6,7 @@
   "main": "build/wasm-cryptopp.js",
   "types": "types/wasm-cryptopp.d.ts",
   "scripts": {
-    "test": "node_modules/.bin/jest  --forceExit --detectOpenHandles --collectCoverage",
+    "test": "node_modules/.bin/jest --forceExit --detectOpenHandles --collectCoverage",
     "build-basic-release": "rollup --config ./samples/basic/rollup.config.js",
     "build-basic-debug": "export BUILD_MODE='DEBUG' && rollup --config ./samples/basic/rollup.config.js",
     "build-basic-async-release": "rollup --config ./samples/basic-async/rollup.config.js",

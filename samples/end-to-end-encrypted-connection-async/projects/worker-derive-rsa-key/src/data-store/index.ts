@@ -12,14 +12,9 @@ interface TestClientData {
   entropy?: string;
   nonce?: string;
   personalization?: string;
-  ivValue?: string;
 
   privateKeyPem?: string;
   publicKeyPem?: string;
-
-  // dhPublicKey?: string;
-  // dhSignedPublicKey?: string;
-  // sharedSecret?: string;
 };
 
 export interface SecureContext {

@@ -9,6 +9,7 @@ class CrytpoppWasmModule {
         await CrytpoppWasmModule.rawLoad();
     }
     static async rawLoad() {
+        // @ts-ignore
         CrytpoppWasmModule._wasmModule = await wasmCryptoppJs({
             locateFile: (url) => {
                 console.log(`url: "${url}"`);
@@ -113,12 +114,13 @@ const deriveRsaKeys = async (data) => {
         const mySalt = "my salt";
         const myInfo = "my info";
         // totalToDerive(332) = entropy(100) + nonce(100) + personalization(100) + ivValue(32)
-        const k_size = 332;
+        // const k_size = 332;
+        const k_size = 300;
         secureContext._data.derivedKey = wasmModule.deriveSha256HexStrKeyFromHexStrData(secureContext._data.password, mySalt, myInfo, k_size);
         secureContext._data.entropy = secureContext._data.derivedKey.slice(0, 100);
         secureContext._data.nonce = secureContext._data.derivedKey.slice(100, 200);
         secureContext._data.personalization = secureContext._data.derivedKey.slice(200, 300);
-        secureContext._data.ivValue = secureContext._data.derivedKey.slice(300, 332);
+        // secureContext._data.ivValue = secureContext._data.derivedKey.slice(300, 332);
     }
     // use derived key deterministic random generator
     {
@@ -155,7 +157,7 @@ const deriveRsaKeys = async (data) => {
         elapsedTime,
         privateKeyPem: secureContext._data.privateKeyPem,
         publicKeyPem: secureContext._data.publicKeyPem,
-        ivValue: secureContext._data.ivValue,
+        // ivValue: secureContext._data.ivValue,
     };
 };
 
@@ -189,6 +191,9 @@ self.onmessage = async (event) => {
         console.log("worker: on reply error");
         console.log("type", event.data.type);
         console.log("response.error", err);
-        self.postMessage({ success: false, response: { error: err } });
+        self.postMessage({
+            success: false,
+            response: { error: err }
+        });
     }
 };

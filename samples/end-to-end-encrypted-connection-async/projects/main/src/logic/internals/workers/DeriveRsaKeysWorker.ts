@@ -71,7 +71,6 @@ export class DeriveRsaKeysWorker {
   private _secureContextId?: string;
   private _privateKeyPem?: string;
   private _publicKeyPem?: string;
-  private _ivValue?: string;
 
   constructor() {
   }
@@ -104,7 +103,6 @@ export class DeriveRsaKeysWorker {
     this._secureContextId = undefined;
     this._privateKeyPem = undefined;
     this._publicKeyPem = undefined;
-    this._ivValue = undefined;
   }
 
   async deriveRsaKeys(password: string, keySize: number): Promise<number> {
@@ -123,7 +121,6 @@ export class DeriveRsaKeysWorker {
 
     this._privateKeyPem = message.response.privateKeyPem;
     this._publicKeyPem = message.response.publicKeyPem;
-    this._ivValue = message.response.ivValue;
 
     return message.response.elapsedTime;
   }
@@ -144,9 +141,6 @@ export class DeriveRsaKeysWorker {
   }
   get publicKeyPem(): string | undefined {
     return this._publicKeyPem;
-  }
-  get ivValue(): string | undefined {
-    return this._ivValue;
   }
 
 };

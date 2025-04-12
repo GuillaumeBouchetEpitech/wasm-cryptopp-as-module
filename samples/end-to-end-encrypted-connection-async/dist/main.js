@@ -285,7 +285,7 @@ class DeriveRsaKeysWorker {
     _secureContextId;
     _privateKeyPem;
     _publicKeyPem;
-    _ivValue;
+    // private _ivValue?: string;
     constructor() {
     }
     async initialize() {
@@ -314,7 +314,7 @@ class DeriveRsaKeysWorker {
         this._secureContextId = undefined;
         this._privateKeyPem = undefined;
         this._publicKeyPem = undefined;
-        this._ivValue = undefined;
+        // this._ivValue = undefined;
     }
     async deriveRsaKeys(password, keySize) {
         if (!this._workerInstance) {
@@ -329,7 +329,8 @@ class DeriveRsaKeysWorker {
         }
         this._privateKeyPem = message.response.privateKeyPem;
         this._publicKeyPem = message.response.publicKeyPem;
-        this._ivValue = message.response.ivValue;
+        // this._ivValue = message.response.ivValue;
+        // this._ivValue = message.response.ivValue.slice(0, 13*2); // reduce iv size from 16 to 13
         return message.response.elapsedTime;
     }
     makeRsaKeyPair() {
@@ -346,9 +347,6 @@ class DeriveRsaKeysWorker {
     }
     get publicKeyPem() {
         return this._publicKeyPem;
-    }
-    get ivValue() {
-        return this._ivValue;
     }
 }
 //
@@ -378,18 +376,44 @@ class RsaKeyPair {
     }
 }
 
+const getRandomHexStr = (inSize) => {
+    const wasmModule = CrytpoppWasmModule.get();
+    const prng = new wasmModule.AutoSeededRandomPoolJs();
+    const randomHexStr = prng.getRandomHexStr(inSize);
+    prng.delete();
+    return randomHexStr;
+};
+
+//
+//
+//
 var MessageTypes;
 (function (MessageTypes) {
     MessageTypes["PlainMessage"] = "PlainMessage";
     MessageTypes["EncryptedMessage"] = "EncryptedMessage";
+    MessageTypes["ErrorMessage"] = "ErrorMessage";
     MessageTypes["SecurityRequest"] = "SecurityRequest";
     MessageTypes["SecurityResponse"] = "SecurityResponse";
 })(MessageTypes || (MessageTypes = {}));
-const isMessage = (inValue) => {
+const isBaseMessage = (inValue) => {
     return (typeof (inValue) === 'object' &&
-        typeof (inValue.type) === 'string' &&
-        typeof (inValue.payload) === 'string');
+        typeof (inValue.type) === 'string');
 };
+const isPlainMessage = (inValue) => {
+    return (typeof (inValue) === 'object' &&
+        inValue.type === MessageTypes.PlainMessage &&
+        typeof (inValue.plainText) === 'string');
+};
+const isEncryptedMessage = (inValue) => {
+    return (typeof (inValue) === 'object' &&
+        inValue.type === MessageTypes.EncryptedMessage &&
+        typeof (inValue.encryptedMessage) === 'string' &&
+        typeof (inValue.size) === 'number' &&
+        typeof (inValue.ivValue) === 'string');
+};
+//
+//
+//
 var EncryptedCommunicationState;
 (function (EncryptedCommunicationState) {
     EncryptedCommunicationState[EncryptedCommunicationState["unencrypted"] = 0] = "unencrypted";
@@ -399,11 +423,16 @@ var EncryptedCommunicationState;
 })(EncryptedCommunicationState || (EncryptedCommunicationState = {}));
 const isSecurityResponsePayload = (inValue) => {
     return (typeof (inValue) === 'object' &&
-        typeof (inValue.signedPublicKey) === 'string');
+        typeof (inValue.signedPublicKey) === 'string' &&
+        inValue.type === MessageTypes.SecurityResponse);
 };
 const isSecurityRequestPayload = (inValue) => {
-    return (isSecurityResponsePayload(inValue));
+    return (typeof (inValue) === 'object' &&
+        typeof (inValue.signedPublicKey) === 'string' && (inValue.type === MessageTypes.SecurityRequest));
 };
+//
+//
+//
 
 const printHexadecimalStrings = (onLogging, inHexStr, inStep) => {
     const strSize = inHexStr.length.toString();
@@ -437,7 +466,9 @@ class AsyncSecureClient {
     _rsaKeyPair;
     // AesSymmetricCipherJs -> AES CBC
     // private _aesSymmetricCipher: wasmCryptoppJs.AesSymmetricCipherJs;
-    // AesStreamCipherJs -> AES CTR
+    // // AesStreamCipherJs -> AES CTR
+    // private _aesStreamCipher: wasmCryptoppJs.AesStreamCipherJs;
+    // AuthenticatedEncryptionJs -> AES CCM (or GCM?)
     _aesStreamCipher;
     constructor(password, inCommunication, inOnLogging) {
         this._password = password;
@@ -445,7 +476,7 @@ class AsyncSecureClient {
         this._onLogging = inOnLogging;
         const wasmModule = CrytpoppWasmModule.get();
         // this._aesSymmetricCipher = new wasmModule.AesSymmetricCipherJs();
-        this._aesStreamCipher = new wasmModule.AesStreamCipherJs();
+        this._aesStreamCipher = new wasmModule.AuthenticatedEncryptionJs();
         this._communication.onReceive(async (inMsg) => {
             await this._processReceivedClientMessage(inMsg);
         });
@@ -484,30 +515,26 @@ class AsyncSecureClient {
         if (!this._diffieHellmanWorker.publicKey) {
             throw new Error("no public key generated");
         }
-        if (!this._deriveRsaKeysWorker.ivValue) {
-            throw new Error("no iv value generated");
-        }
-        // this._ivValue = getRandomHexStr(16);
-        this._log(`message.response.ivValue`);
-        printHexadecimalStrings(this._log.bind(this), this._deriveRsaKeysWorker.ivValue, 32);
+        // if (!this._deriveRsaKeysWorker.ivValue) {
+        //   throw new Error("no iv value generated");
+        // }
+        // this._log(`message.response.ivValue`);
+        // printHexadecimalStrings(this._log.bind(this), this._deriveRsaKeysWorker.ivValue, 32);
         if (!this._rsaKeyPair) {
             throw new Error("Rsa Key Pair not initialized");
         }
         this._log("signing our public key for the peer");
         const signedPublicKey = this._rsaKeyPair.signPayloadToHexStr(this._diffieHellmanWorker.publicKey);
-        this._log(Logger.makeColor([128, 128 + 64, 128], `here by signing the payload with the key only know from`));
+        this._log(Logger.makeColor([128, 128 + 64, 128], `here by signing the payload with the key only known from`));
         this._log(Logger.makeColor([128, 128 + 64, 128], `us and our peer, we ensure that we are talking to`));
-        this._log(Logger.makeColor([128, 128 + 64, 128], `our peer and only to them, meaning no bad actor/machine`));
+        this._log(Logger.makeColor([128, 128 + 64, 128], `our peer and only to them, meaning no bad actor`));
         this._log(Logger.makeColor([128, 128 + 64, 128], `in the middle can usurp the identity of our peer and listen`));
         this._log("sending our signed public key to the peer");
-        const payload = {
-            signedPublicKey: signedPublicKey,
-        };
         // this._log(Logger.makeColor([128,128 + 64,128], Logger.makeSize(25, `input password: "${this._password}"`)));
         // this._log(Logger.makeColor([128,128 + 64,128], `input password: "${this._password}"`));
         this._communication.send(JSON.stringify({
             type: MessageTypes.SecurityRequest,
-            payload: JSON.stringify(payload),
+            signedPublicKey,
         }));
     }
     //endregion Make Secure
@@ -521,19 +548,51 @@ class AsyncSecureClient {
         if (this._EncryptedCommunicationState === EncryptedCommunicationState.unencrypted) {
             this._log(`sending a message:`, "[unencrypted]");
             this._log(`"${inText}"`, "[unencrypted]");
-            this._communication.send(JSON.stringify({ type: MessageTypes.PlainMessage, payload: (inText) }));
+            this._communication.send(JSON.stringify({
+                type: MessageTypes.PlainMessage,
+                plainText: inText
+            }));
+            return;
         }
-        else {
+        if (!this._deriveRsaKeysWorker) {
+            throw new Error("worker (deriveRsaKeysWorker) not initialized");
+        }
+        // if (!this._deriveRsaKeysWorker.ivValue) {
+        //   throw new Error("iv value not initialized");
+        // }
+        try {
             this._log(`sending a message:`, "[encrypted]");
             this._log(`"${inText}"`, "[encrypted]");
             this._log(`encrypting`, "[encrypted]");
             const startTime = Date.now();
+            const ivValue = getRandomHexStr(13);
+            // console.log({ivValue})
             const wasmModule = CrytpoppWasmModule.get();
-            const textAshex = wasmModule.utf8ToHex(inText);
-            const encrypted = this._aesStreamCipher.encryptFromHexStrAsHexStr(textAshex);
+            const textAsHex = wasmModule.utf8ToHex(inText);
+            // const encrypted = this._aesStreamCipher.encryptFromHexStrAsHexStr(textAsHex);
+            // const encrypted = this._aesStreamCipher.encryptFromHexStrAsHexStr(textAsHex, this._deriveRsaKeysWorker.ivValue);
+            const encrypted = this._aesStreamCipher.encryptFromHexStrAsHexStr(textAsHex, ivValue);
             const endTime = Date.now();
             this._log(`encrypted (${endTime - startTime}ms)`, "[encrypted]");
-            this._communication.send(JSON.stringify({ type: MessageTypes.EncryptedMessage, payload: encrypted }));
+            // this._communication.send(JSON.stringify({ type: MessageTypes.EncryptedMessage, payload: encrypted }));
+            this._communication.send(JSON.stringify({
+                type: MessageTypes.EncryptedMessage,
+                encryptedMessage: encrypted,
+                size: inText.length,
+                // ivValue: this._deriveRsaKeysWorker.ivValue,
+                ivValue
+            }));
+        }
+        catch (err) {
+            console.log(err);
+            if (typeof (err) === 'number') {
+                const wasmModule = CrytpoppWasmModule.get();
+                console.log(wasmModule.getExceptionMessage(err));
+            }
+            else {
+                console.log(err);
+            }
+            throw err;
         }
     }
     onReceive(inCallback) {
@@ -554,110 +613,105 @@ class AsyncSecureClient {
             throw new Error("was deleted");
         }
         const jsonMsg = JSON.parse(inText);
-        if (!isMessage(jsonMsg)) {
+        if (!isBaseMessage(jsonMsg)) {
             throw new Error("received message structure unrecognized");
         }
         this._log(`received message, type: "${jsonMsg.type}"`);
-        switch (jsonMsg.type) {
-            case MessageTypes.PlainMessage:
-                {
-                    this._onReceiveCallbacks.forEach((callback) => callback(jsonMsg.payload));
-                    break;
-                }
-            case MessageTypes.EncryptedMessage:
-                {
-                    this._log("decrypting");
-                    const startTime = Date.now();
-                    const recovered = this._aesStreamCipher.decryptFromHexStrAsHexStr(jsonMsg.payload);
-                    const wasmModule = CrytpoppWasmModule.get();
-                    const plainText = wasmModule.hexToUtf8(recovered);
-                    const endTime = Date.now();
-                    this._log(`decrypted (${endTime - startTime}ms)`);
-                    if (this._EncryptedCommunicationState === EncryptedCommunicationState.ready) {
-                        this._log("connection now confirmed secure");
-                        this._EncryptedCommunicationState = EncryptedCommunicationState.confirmed;
-                    }
-                    else if (this._EncryptedCommunicationState !== EncryptedCommunicationState.confirmed) {
-                        throw new Error("was expecting to be in a secure state");
-                    }
-                    this._onReceiveCallbacks.forEach((callback) => callback(plainText));
-                    break;
-                }
-            case MessageTypes.SecurityRequest:
-                {
-                    this._log("now securing the connection");
-                    this._EncryptedCommunicationState = EncryptedCommunicationState.initiated;
-                    const jsonPayload = JSON.parse(jsonMsg.payload);
-                    if (!isSecurityRequestPayload(jsonPayload)) {
-                        throw new Error("received message security request payload unrecognized");
-                    }
-                    if (!this._diffieHellmanWorker) {
-                        throw new Error("worker (workerObtainCipherKey) not initialized");
-                    }
-                    // both can be inside a Promise.all([...])
-                    // -> but since it would mess up the logs of this demo...
-                    await this._deriveRsaKeys();
-                    await this._generateDiffieHellmanKeys();
-                    if (!this._rsaKeyPair) {
-                        throw new Error("Rsa Key Pair not initialized");
-                    }
-                    this._log("verifying signed public key from the peer");
-                    const verifiedPublicKey = this._rsaKeyPair.verifyHexStrPayloadToStr(jsonPayload.signedPublicKey);
-                    this._log(Logger.makeColor([128, 128 + 64, 128], `here we verify the signed key from our peer, by doing so we can`));
-                    this._log(Logger.makeColor([128, 128 + 64, 128], `confirm the peer is someone that used the same password only known`));
-                    this._log(Logger.makeColor([128, 128 + 64, 128], `from us and our peer(s), which is vital to prevent someone`));
-                    this._log(Logger.makeColor([128, 128 + 64, 128], `listening in the middle (bad actors)`));
-                    await this._computeDiffieHellmanSharedSecret(verifiedPublicKey);
-                    await this._initializeAesSymmetricCipher();
-                    this._EncryptedCommunicationState = EncryptedCommunicationState.ready;
-                    if (!this._diffieHellmanWorker.publicKey) {
-                        throw new Error("missing public key");
-                    }
-                    this._log("signing our public key for the peer");
-                    const signedPublicKey = this._rsaKeyPair.signPayloadToHexStr(this._diffieHellmanWorker.publicKey);
-                    this._log(Logger.makeColor([128, 128 + 64, 128], `here by signing the payload with the key only know from`));
-                    this._log(Logger.makeColor([128, 128 + 64, 128], `us and our peer, we ensure that we are talking to`));
-                    this._log(Logger.makeColor([128, 128 + 64, 128], `our peer and only to them, meaning no bad actor/machine`));
-                    this._log(Logger.makeColor([128, 128 + 64, 128], `in the middle can usurp the identity of our peer and listen`));
-                    this._log("sending our signed public key to the peer");
-                    const payload = {
-                        signedPublicKey: signedPublicKey,
-                    };
-                    this._communication.send(JSON.stringify({
-                        type: MessageTypes.SecurityResponse,
-                        payload: JSON.stringify(payload),
-                    }));
-                    break;
-                }
-            case MessageTypes.SecurityResponse:
-                {
-                    this._log("processing received security response");
-                    if (this._EncryptedCommunicationState !== EncryptedCommunicationState.initiated) {
-                        throw new Error("was expecting a security response");
-                    }
-                    this._log("computing the shared secret with the received public key");
-                    const jsonPayload = JSON.parse(jsonMsg.payload);
-                    if (!isSecurityResponsePayload(jsonPayload)) {
-                        throw new Error("received message security response payload unrecognized");
-                    }
-                    if (!this._rsaKeyPair) {
-                        throw new Error("Rsa Key Pair not initialized");
-                    }
-                    this._log("verifying signed public key of the peer");
-                    const verifiedPublicKey = this._rsaKeyPair.verifyHexStrPayloadToStr(jsonPayload.signedPublicKey);
-                    this._log(Logger.makeColor([128, 128 + 64, 128], `here we verify the signed key from our peer, by doing so we can`));
-                    this._log(Logger.makeColor([128, 128 + 64, 128], `confirm the peer is someone that used the same password only known`));
-                    this._log(Logger.makeColor([128, 128 + 64, 128], `from us and our peer(s), which is vital to prevent someone`));
-                    this._log(Logger.makeColor([128, 128 + 64, 128], `listening in the middle (bad actors)`));
-                    await this._computeDiffieHellmanSharedSecret(verifiedPublicKey);
-                    await this._initializeAesSymmetricCipher();
-                    this._log("connection now confirmed secure");
-                    this._EncryptedCommunicationState = EncryptedCommunicationState.ready;
-                    break;
-                }
-            default:
-                throw new Error(`received message type unsupported, type: "${jsonMsg.type}"`);
+        if (isPlainMessage(jsonMsg)) {
+            this._onReceiveCallbacks.forEach((callback) => callback(jsonMsg.plainText));
+            return;
         }
+        if (isEncryptedMessage(jsonMsg)) {
+            this._log("decrypting");
+            const startTime = Date.now();
+            try {
+                const recovered = this._aesStreamCipher.decryptFromHexStrAsHexStr(jsonMsg.encryptedMessage, jsonMsg.size, jsonMsg.ivValue);
+                const wasmModule = CrytpoppWasmModule.get();
+                const plainText = wasmModule.hexToUtf8(recovered);
+                const endTime = Date.now();
+                this._log(`decrypted (${endTime - startTime}ms)`);
+                if (this._EncryptedCommunicationState === EncryptedCommunicationState.ready) {
+                    this._log("connection now confirmed secure");
+                    this._EncryptedCommunicationState = EncryptedCommunicationState.confirmed;
+                }
+                else if (this._EncryptedCommunicationState !== EncryptedCommunicationState.confirmed) {
+                    throw new Error("was expecting to be in a secure state");
+                }
+                this._onReceiveCallbacks.forEach((callback) => callback(plainText));
+            }
+            catch (err) {
+                console.log(err);
+                if (typeof (err) === 'number') {
+                    const wasmModule = CrytpoppWasmModule.get();
+                    console.log(wasmModule.getExceptionMessage(err));
+                }
+                else {
+                    console.log(err);
+                }
+                throw err;
+            }
+            return;
+        }
+        if (isSecurityRequestPayload(jsonMsg)) {
+            this._log("now securing the connection");
+            this._EncryptedCommunicationState = EncryptedCommunicationState.initiated;
+            if (!this._diffieHellmanWorker) {
+                throw new Error("worker (workerObtainCipherKey) not initialized");
+            }
+            // both can be inside a Promise.all([...])
+            // -> but since it would mess up the logs of this demo...
+            await this._deriveRsaKeys();
+            await this._generateDiffieHellmanKeys();
+            if (!this._rsaKeyPair) {
+                throw new Error("Rsa Key Pair not initialized");
+            }
+            this._log("verifying signed public key from the peer");
+            const verifiedPublicKey = this._rsaKeyPair.verifyHexStrPayloadToStr(jsonMsg.signedPublicKey);
+            this._log(Logger.makeColor([128, 128 + 64, 128], `here we verify the signed key from our peer, by doing so we can`));
+            this._log(Logger.makeColor([128, 128 + 64, 128], `confirm the peer is someone that used the same password only known`));
+            this._log(Logger.makeColor([128, 128 + 64, 128], `from us and our peer(s), which is vital to prevent someone`));
+            this._log(Logger.makeColor([128, 128 + 64, 128], `listening in the middle (bad actors)`));
+            await this._computeDiffieHellmanSharedSecret(verifiedPublicKey);
+            await this._initializeAesSymmetricCipher();
+            this._EncryptedCommunicationState = EncryptedCommunicationState.ready;
+            if (!this._diffieHellmanWorker.publicKey) {
+                throw new Error("missing public key");
+            }
+            this._log("signing our public key for the peer");
+            const signedPublicKey = this._rsaKeyPair.signPayloadToHexStr(this._diffieHellmanWorker.publicKey);
+            this._log(Logger.makeColor([128, 128 + 64, 128], `here by signing the payload with the key only known from`));
+            this._log(Logger.makeColor([128, 128 + 64, 128], `us and our peer, we ensure that we are talking to`));
+            this._log(Logger.makeColor([128, 128 + 64, 128], `our peer and only to them, meaning no bad actor`));
+            this._log(Logger.makeColor([128, 128 + 64, 128], `in the middle can usurp the identity of our peer and listen`));
+            this._log("sending our signed public key to the peer");
+            this._communication.send(JSON.stringify({
+                type: MessageTypes.SecurityResponse,
+                signedPublicKey: signedPublicKey,
+            }));
+            return;
+        }
+        if (isSecurityResponsePayload(jsonMsg)) {
+            this._log("processing received security response");
+            if (this._EncryptedCommunicationState !== EncryptedCommunicationState.initiated) {
+                throw new Error("was expecting a security response");
+            }
+            this._log("computing the shared secret with the received public key");
+            if (!this._rsaKeyPair) {
+                throw new Error("Rsa Key Pair not initialized");
+            }
+            this._log("verifying signed public key of the peer");
+            const verifiedPublicKey = this._rsaKeyPair.verifyHexStrPayloadToStr(jsonMsg.signedPublicKey);
+            this._log(Logger.makeColor([128, 128 + 64, 128], `here we verify the signed key from our peer, by doing so we can`));
+            this._log(Logger.makeColor([128, 128 + 64, 128], `confirm the peer is someone that used the same password only known`));
+            this._log(Logger.makeColor([128, 128 + 64, 128], `from us and our peer(s), which is vital to prevent someone`));
+            this._log(Logger.makeColor([128, 128 + 64, 128], `listening in the middle (bad actors)`));
+            await this._computeDiffieHellmanSharedSecret(verifiedPublicKey);
+            await this._initializeAesSymmetricCipher();
+            this._log("connection now confirmed secure");
+            this._EncryptedCommunicationState = EncryptedCommunicationState.ready;
+            return;
+        }
+        throw new Error(`received message type unsupported, type: "${jsonMsg.type}"`);
     }
     //endregion Process Message
     _log(inLogMsg, inLogHeader) {
@@ -697,8 +751,8 @@ class AsyncSecureClient {
         this._log(this._deriveRsaKeysWorker.privateKeyPem);
         this._log("output publicKeyPem");
         this._log(this._deriveRsaKeysWorker.publicKeyPem);
-        this._log("output ivValue");
-        printHexadecimalStrings(this._log.bind(this), this._deriveRsaKeysWorker.ivValue, 32);
+        // this._log("output ivValue");
+        // printHexadecimalStrings(this._log.bind(this), this._deriveRsaKeysWorker.ivValue!, 32);
         this._log(Logger.makeColor([128, 128 + 64, 128], `those value will be the same for the peer`));
         this._log(Logger.makeColor([128, 128 + 64, 128], `since the same password was used`));
         this._log(`Derive Rsa Keys done (elapsedTime: ${elapsedTime}ms)`);
@@ -709,16 +763,12 @@ class AsyncSecureClient {
         if (!this._diffieHellmanWorker) {
             throw new Error("worker (workerObtainCipherKey) not initialized");
         }
-        // if (!this._deriveRsaKeysWorker) {
-        //   throw new Error("worker (deriveRsaKeysWorker) not initialized");
-        // }
         this._log("------------------------------------");
         this._log("Diffie Hellman Key Exchange");
         this._log(`computing shared secret`);
         this._log(`input publicKey`);
         printHexadecimalStrings(this._log.bind(this), publicKey, 32);
         const elapsed = await this._diffieHellmanWorker.computeDiffieHellmanSharedSecret(publicKey);
-        // this._sharedSecret = this._diffieHellmanWorker.sharedSecret;
         this._log(`output sharedSecret`);
         printHexadecimalStrings(this._log.bind(this), this._diffieHellmanWorker.sharedSecret, 32);
         this._log(`computed shared secret (${elapsed}ms)`);
@@ -728,9 +778,9 @@ class AsyncSecureClient {
         if (!this._deriveRsaKeysWorker) {
             throw new Error("worker (deriveRsaKeysWorker) not initialized");
         }
-        if (!this._deriveRsaKeysWorker.ivValue) {
-            throw new Error("iv value not initialized");
-        }
+        // if (!this._deriveRsaKeysWorker.ivValue) {
+        //   throw new Error("iv value not initialized");
+        // }
         if (!this._diffieHellmanWorker) {
             throw new Error("worker (workerObtainCipherKey) not initialized");
         }
@@ -738,12 +788,15 @@ class AsyncSecureClient {
             throw new Error("shared secret not initialized");
         }
         this._log("------------------------------------");
-        this._log("AES CTR (Stream) Cipher");
+        this._log("AES GCM (Stream) Cipher");
         this._log("initializing");
         this._log("256bits key from computed shared secret");
         const startTime = Date.now();
-        this._aesStreamCipher.initializeFromHexStr(this._diffieHellmanWorker.sharedSecret.slice(0, 64), // 64hex -> 32bytes ->  256bits key
-        this._deriveRsaKeysWorker.ivValue);
+        // this._aesStreamCipher.initializeFromHexStr(
+        //   this._diffieHellmanWorker.sharedSecret.slice(0, 64), // 64hex -> 32bytes ->  256bits key
+        //   this._deriveRsaKeysWorker.ivValue,
+        // );
+        this._aesStreamCipher.initializeFromHexStr(this._diffieHellmanWorker.sharedSecret.slice(0, 64));
         const endTime = Date.now();
         this._log(`initialized (${endTime - startTime}ms)`);
         this._log("------------------------------------");
@@ -781,43 +834,36 @@ const logSeparator = (logger, inAlign, jsonMsg) => {
 };
 const logMessagePayload = (logger, inAlign, inText) => {
     const jsonMsg = JSON.parse(inText);
-    if (isMessage(jsonMsg)) {
-        logSeparator(logger, inAlign, jsonMsg);
-        logger.alignedLog(inAlign, `type:`);
-        logger.alignedLog(inAlign, Logger.makeColor([128 + 64, 128 + 64, 64], `"${jsonMsg.type}"`));
-        switch (jsonMsg.type) {
-            case MessageTypes.PlainMessage:
-                logger.alignedLog(inAlign, `payload:`);
-                logger.alignedLog(inAlign, Logger.makeColor([128 + 64, 64, 64], Logger.makeSize(25, `"${jsonMsg.payload}"`)));
-                break;
-            default: {
-                try {
-                    const jsonSecMsg = JSON.parse(jsonMsg.payload);
-                    if (isSecurityRequestPayload(jsonSecMsg)) {
-                        logger.alignedLog(inAlign, `payload.signedPublicKey:`);
-                        printHexadecimalStrings$1(logger, jsonSecMsg.signedPublicKey, 64, inAlign);
-                    }
-                    else if (isSecurityResponsePayload(jsonSecMsg)) {
-                        logger.alignedLog(inAlign, `payload.signedPublicKey:`);
-                        printHexadecimalStrings$1(logger, jsonSecMsg.signedPublicKey, 64, inAlign);
-                    }
-                    else {
-                        logger.alignedLog(inAlign, `payload:`);
-                        printHexadecimalStrings$1(logger, jsonMsg.payload, 64, inAlign);
-                    }
-                }
-                catch {
-                    logger.alignedLog(inAlign, `payload:`);
-                    printHexadecimalStrings$1(logger, jsonMsg.payload, 64, inAlign);
-                }
-                break;
-            }
-        }
-        logSeparator(logger, inAlign, jsonMsg);
+    if (!isBaseMessage(jsonMsg)) {
+        throw new Error("unknown message format");
     }
-    else {
-        logger.alignedLog(inAlign, `"${inText}"`);
+    logSeparator(logger, inAlign, jsonMsg);
+    logger.alignedLog(inAlign, `type:`);
+    logger.alignedLog(inAlign, Logger.makeColor([128 + 64, 128 + 64, 64], `"${jsonMsg.type}"`));
+    if (isPlainMessage(jsonMsg)) {
+        logger.alignedLog(inAlign, `payload:`);
+        logger.alignedLog(inAlign, Logger.makeColor([128 + 64, 64, 64], Logger.makeSize(25, `"${jsonMsg.plainText}"`)));
+        logSeparator(logger, inAlign, jsonMsg);
+        return;
     }
+    if (isEncryptedMessage(jsonMsg)) {
+        logger.alignedLog(inAlign, `encryptedMessage:`);
+        printHexadecimalStrings$1(logger, jsonMsg.encryptedMessage, 64, inAlign);
+        logger.alignedLog(inAlign, `size:`);
+        logger.alignedLog(inAlign, jsonMsg.size);
+        logger.alignedLog(inAlign, `ivValue:`);
+        printHexadecimalStrings$1(logger, jsonMsg.ivValue, 64, inAlign);
+        logSeparator(logger, inAlign, jsonMsg);
+        return;
+    }
+    if (isSecurityRequestPayload(jsonMsg) ||
+        isSecurityResponsePayload(jsonMsg)) {
+        logger.alignedLog(inAlign, `payload.signedPublicKey:`);
+        printHexadecimalStrings$1(logger, jsonMsg.signedPublicKey, 64, inAlign);
+        logSeparator(logger, inAlign, jsonMsg);
+        return;
+    }
+    throw new Error("unknown message type");
 };
 
 class FakeWebSocket {

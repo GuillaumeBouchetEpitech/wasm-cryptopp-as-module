@@ -22,6 +22,15 @@ declare module wasmCryptoppJs {
     getSharedSecretAsHexStr(): string;
   }
 
+  class EllipticCurveDiffieHellmanClientJs {
+    constructor();
+    delete(): void;
+    generateRandomKeys(rng: AutoSeededRandomPoolJs): void;
+    computeSharedSecretFromHexStr(inHexStr: string): void;
+    getPublicKeyAsHexStr(): string;
+    getSharedSecretAsHexStr(): string;
+  }
+
   //
   //
   //
@@ -52,6 +61,14 @@ declare module wasmCryptoppJs {
     initializeFromHexStr(inKeyStr: string, inIvStr: string): void;
     encryptFromHexStrAsHexStr(inStr: string): string;
     decryptFromHexStrAsHexStr(inStr: string): string;
+  };
+
+  class AuthenticatedEncryptionJs {
+    constructor();
+    delete(): void;
+    initializeFromHexStr(inKeyStr: string): void;
+    encryptFromHexStrAsHexStr(inStr: string, inIvStr: string): string;
+    decryptFromHexStrAsHexStr(inStr: string, size: number, inIvStr: string): string;
   };
 
   class AesSymmetricCipherJs {

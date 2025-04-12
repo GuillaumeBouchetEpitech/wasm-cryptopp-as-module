@@ -17,7 +17,7 @@ export const generateDiffieHellmanKeysStrategy = async (data: any): Promise<Diff
   //
 
   const secureContext = getSecureContext(data.id);
-  secureContext.diffieHellmanClient.generateRandomKeysSimpler();
+  secureContext.diffieHellmanClient.generateRandomKeys(secureContext.autoSeededRandomPool);
   secureContext.publicKey = secureContext.diffieHellmanClient.getPublicKeyAsHexStr();
 
   //

@@ -45,7 +45,10 @@ self.onmessage = async (event: any) => {
         console.log("worker: on reply error");
         console.log("type", event.data.type);
         console.log("response.error", err);
-        self.postMessage({ success: false, response: { error: err } });
+        self.postMessage({
+            success: false,
+            response: { error: err }
+        });
     }
 };
 

@@ -1,5 +1,13 @@
 
-import { isMessage, isSecurityRequestPayload, isSecurityResponsePayload, Message, MessageTypes } from "./Messaging";
+import {
+  BaseMessage,
+  isBaseMessage,
+  isEncryptedMessage,
+  isPlainMessage,
+  isSecurityRequestPayload,
+  isSecurityResponsePayload,
+  MessageTypes
+} from "./Messaging";
 
 import { Logger, printHexadecimalStrings } from "@local-framework";
 
@@ -24,7 +32,7 @@ const k_securityMessagetext = [
   "(OK)",
 ].join("\n");
 
-const logSeparator = (logger: Logger, inAlign: "left" | "center" | "right", jsonMsg: Message) => {
+const logSeparator = (logger: Logger, inAlign: "left" | "center" | "right", jsonMsg: BaseMessage) => {
 
   if (jsonMsg.type === MessageTypes.PlainMessage) {
     logger.alignedLog(inAlign, Logger.makeColor([128,64,64], k_plainMessagetext));
@@ -39,51 +47,47 @@ export const logMessagePayload = (logger: Logger, inAlign: "left" | "center" | "
 
   const jsonMsg = JSON.parse(inText);
 
-  if (isMessage(jsonMsg)) {
-
-    logSeparator(logger, inAlign, jsonMsg);
-
-    logger.alignedLog(inAlign, `type:`);
-    logger.alignedLog(inAlign, Logger.makeColor([128+64,128+64,64], `"${jsonMsg.type}"`));
-
-    switch (jsonMsg.type) {
-      case MessageTypes.PlainMessage:
-        logger.alignedLog(inAlign, `payload:`);
-        logger.alignedLog(inAlign, Logger.makeColor([128+64,64,64], Logger.makeSize(25, `"${jsonMsg.payload}"`)));
-        break;
-      default: {
-
-        try {
-
-          const jsonSecMsg = JSON.parse(jsonMsg.payload);
-
-          if (isSecurityRequestPayload(jsonSecMsg)) {
-
-            logger.alignedLog(inAlign, `payload.signedPublicKey:`);
-            printHexadecimalStrings(logger, jsonSecMsg.signedPublicKey, 64, inAlign)
-
-          } else if (isSecurityResponsePayload(jsonSecMsg)) {
-
-            logger.alignedLog(inAlign, `payload.signedPublicKey:`);
-            printHexadecimalStrings(logger, jsonSecMsg.signedPublicKey, 64, inAlign)
-
-          } else {
-            logger.alignedLog(inAlign, `payload:`);
-            printHexadecimalStrings(logger, jsonMsg.payload, 64, inAlign)
-          }
-
-        } catch {
-          logger.alignedLog(inAlign, `payload:`);
-          printHexadecimalStrings(logger, jsonMsg.payload, 64, inAlign)
-        }
-
-        break;
-      }
-    }
-
-    logSeparator(logger, inAlign, jsonMsg);
-
-  } else {
-    logger.alignedLog(inAlign, `"${inText}"`);
+  if (!isBaseMessage(jsonMsg)) {
+    throw new Error("unknown message format");
   }
+
+  logSeparator(logger, inAlign, jsonMsg);
+
+  logger.alignedLog(inAlign, `type:`);
+  logger.alignedLog(inAlign, Logger.makeColor([128+64,128+64,64], `"${jsonMsg.type}"`));
+
+  if (isPlainMessage(jsonMsg)) {
+    logger.alignedLog(inAlign, `payload:`);
+    logger.alignedLog(inAlign, Logger.makeColor([128+64,64,64], Logger.makeSize(25, `"${jsonMsg.plainText}"`)));
+    logSeparator(logger, inAlign, jsonMsg);
+
+    return;
+  }
+
+  if (isEncryptedMessage(jsonMsg)) {
+
+    logger.alignedLog(inAlign, `encryptedMessage:`);
+    printHexadecimalStrings(logger, jsonMsg.encryptedMessage, 64, inAlign)
+    logger.alignedLog(inAlign, `size:`);
+    logger.alignedLog(inAlign, jsonMsg.size);
+    logger.alignedLog(inAlign, `ivValue:`);
+    printHexadecimalStrings(logger, jsonMsg.ivValue, 64, inAlign)
+    logSeparator(logger, inAlign, jsonMsg);
+
+    return;
+  }
+
+  if (
+    isSecurityRequestPayload(jsonMsg) ||
+    isSecurityResponsePayload(jsonMsg)
+  ) {
+
+    logger.alignedLog(inAlign, `payload.signedPublicKey:`);
+    printHexadecimalStrings(logger, jsonMsg.signedPublicKey, 64, inAlign)
+    logSeparator(logger, inAlign, jsonMsg);
+
+    return;
+  }
+
+  throw new Error("unknown message type");
 };

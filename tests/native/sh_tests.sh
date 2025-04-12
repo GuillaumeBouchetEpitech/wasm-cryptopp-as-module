@@ -1,3 +1,4 @@
+#!/bin/bash
 
 reset
 
@@ -6,24 +7,24 @@ reset
 # ensure third party build
 
 CURR_DIR=$PWD
-cd ../../thirdparties
-make build_mode="release" build_platform="native" -j8
+cd ../../thirdparties || exit 1
+make build_mode="release" build_platform="native" -j8 || exit 1
 
 #
 #
 # refresh wrapper build
 
-cd $CURR_DIR
-cd ../../
-make build_mode="debug" build_platform="native" clean
-make build_mode="debug" build_platform="native" -j8
-cd $CURR_DIR
+cd "$CURR_DIR" || exit 1
+cd ../../ || exit 1
+# make build_mode="debug" build_platform="native" clean
+make build_mode="debug" build_platform="native" -j8 || exit 1
+cd "$CURR_DIR" || exit 1
 
 #
 #
 # refresh native test build
 
-make build_platform="native" re -j8
+make build_platform="native" re -j8 || exit 1
 
 #
 #
