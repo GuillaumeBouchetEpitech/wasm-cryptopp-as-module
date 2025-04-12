@@ -285,7 +285,6 @@ class DeriveRsaKeysWorker {
     _secureContextId;
     _privateKeyPem;
     _publicKeyPem;
-    // private _ivValue?: string;
     constructor() {
     }
     async initialize() {
@@ -314,7 +313,6 @@ class DeriveRsaKeysWorker {
         this._secureContextId = undefined;
         this._privateKeyPem = undefined;
         this._publicKeyPem = undefined;
-        // this._ivValue = undefined;
     }
     async deriveRsaKeys(password, keySize) {
         if (!this._workerInstance) {
@@ -329,8 +327,6 @@ class DeriveRsaKeysWorker {
         }
         this._privateKeyPem = message.response.privateKeyPem;
         this._publicKeyPem = message.response.publicKeyPem;
-        // this._ivValue = message.response.ivValue;
-        // this._ivValue = message.response.ivValue.slice(0, 13*2); // reduce iv size from 16 to 13
         return message.response.elapsedTime;
     }
     makeRsaKeyPair() {
@@ -464,18 +460,12 @@ class AsyncSecureClient {
     _diffieHellmanWorker;
     _deriveRsaKeysWorker;
     _rsaKeyPair;
-    // AesSymmetricCipherJs -> AES CBC
-    // private _aesSymmetricCipher: wasmCryptoppJs.AesSymmetricCipherJs;
-    // // AesStreamCipherJs -> AES CTR
-    // private _aesStreamCipher: wasmCryptoppJs.AesStreamCipherJs;
-    // AuthenticatedEncryptionJs -> AES CCM (or GCM?)
     _aesStreamCipher;
     constructor(password, inCommunication, inOnLogging) {
         this._password = password;
         this._communication = inCommunication;
         this._onLogging = inOnLogging;
         const wasmModule = CrytpoppWasmModule.get();
-        // this._aesSymmetricCipher = new wasmModule.AesSymmetricCipherJs();
         this._aesStreamCipher = new wasmModule.AuthenticatedEncryptionJs();
         this._communication.onReceive(async (inMsg) => {
             await this._processReceivedClientMessage(inMsg);
@@ -515,11 +505,6 @@ class AsyncSecureClient {
         if (!this._diffieHellmanWorker.publicKey) {
             throw new Error("no public key generated");
         }
-        // if (!this._deriveRsaKeysWorker.ivValue) {
-        //   throw new Error("no iv value generated");
-        // }
-        // this._log(`message.response.ivValue`);
-        // printHexadecimalStrings(this._log.bind(this), this._deriveRsaKeysWorker.ivValue, 32);
         if (!this._rsaKeyPair) {
             throw new Error("Rsa Key Pair not initialized");
         }
@@ -530,8 +515,6 @@ class AsyncSecureClient {
         this._log(Logger.makeColor([128, 128 + 64, 128], `our peer and only to them, meaning no bad actor`));
         this._log(Logger.makeColor([128, 128 + 64, 128], `in the middle can usurp the identity of our peer and listen`));
         this._log("sending our signed public key to the peer");
-        // this._log(Logger.makeColor([128,128 + 64,128], Logger.makeSize(25, `input password: "${this._password}"`)));
-        // this._log(Logger.makeColor([128,128 + 64,128], `input password: "${this._password}"`));
         this._communication.send(JSON.stringify({
             type: MessageTypes.SecurityRequest,
             signedPublicKey,
@@ -557,29 +540,21 @@ class AsyncSecureClient {
         if (!this._deriveRsaKeysWorker) {
             throw new Error("worker (deriveRsaKeysWorker) not initialized");
         }
-        // if (!this._deriveRsaKeysWorker.ivValue) {
-        //   throw new Error("iv value not initialized");
-        // }
         try {
             this._log(`sending a message:`, "[encrypted]");
             this._log(`"${inText}"`, "[encrypted]");
             this._log(`encrypting`, "[encrypted]");
             const startTime = Date.now();
             const ivValue = getRandomHexStr(13);
-            // console.log({ivValue})
             const wasmModule = CrytpoppWasmModule.get();
             const textAsHex = wasmModule.utf8ToHex(inText);
-            // const encrypted = this._aesStreamCipher.encryptFromHexStrAsHexStr(textAsHex);
-            // const encrypted = this._aesStreamCipher.encryptFromHexStrAsHexStr(textAsHex, this._deriveRsaKeysWorker.ivValue);
             const encrypted = this._aesStreamCipher.encryptFromHexStrAsHexStr(textAsHex, ivValue);
             const endTime = Date.now();
             this._log(`encrypted (${endTime - startTime}ms)`, "[encrypted]");
-            // this._communication.send(JSON.stringify({ type: MessageTypes.EncryptedMessage, payload: encrypted }));
             this._communication.send(JSON.stringify({
                 type: MessageTypes.EncryptedMessage,
                 encryptedMessage: encrypted,
                 size: inText.length,
-                // ivValue: this._deriveRsaKeysWorker.ivValue,
                 ivValue
             }));
         }
@@ -751,8 +726,6 @@ class AsyncSecureClient {
         this._log(this._deriveRsaKeysWorker.privateKeyPem);
         this._log("output publicKeyPem");
         this._log(this._deriveRsaKeysWorker.publicKeyPem);
-        // this._log("output ivValue");
-        // printHexadecimalStrings(this._log.bind(this), this._deriveRsaKeysWorker.ivValue!, 32);
         this._log(Logger.makeColor([128, 128 + 64, 128], `those value will be the same for the peer`));
         this._log(Logger.makeColor([128, 128 + 64, 128], `since the same password was used`));
         this._log(`Derive Rsa Keys done (elapsedTime: ${elapsedTime}ms)`);
@@ -778,9 +751,6 @@ class AsyncSecureClient {
         if (!this._deriveRsaKeysWorker) {
             throw new Error("worker (deriveRsaKeysWorker) not initialized");
         }
-        // if (!this._deriveRsaKeysWorker.ivValue) {
-        //   throw new Error("iv value not initialized");
-        // }
         if (!this._diffieHellmanWorker) {
             throw new Error("worker (workerObtainCipherKey) not initialized");
         }
@@ -792,10 +762,6 @@ class AsyncSecureClient {
         this._log("initializing");
         this._log("256bits key from computed shared secret");
         const startTime = Date.now();
-        // this._aesStreamCipher.initializeFromHexStr(
-        //   this._diffieHellmanWorker.sharedSecret.slice(0, 64), // 64hex -> 32bytes ->  256bits key
-        //   this._deriveRsaKeysWorker.ivValue,
-        // );
         this._aesStreamCipher.initializeFromHexStr(this._diffieHellmanWorker.sharedSecret.slice(0, 64));
         const endTime = Date.now();
         this._log(`initialized (${endTime - startTime}ms)`);

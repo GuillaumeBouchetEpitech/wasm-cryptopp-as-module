@@ -67,7 +67,6 @@ const createNewSecureContext = () => {
     const keyStr = `${idVal}`;
     const wasmModule = CrytpoppWasmModule.get();
     _secureContextMap.set(keyStr, {
-        // diffieHellmanClient: new wasmModule.DiffieHellmanClientJs(),
         autoSeededRandomPool: new wasmModule.AutoSeededRandomPoolJs(),
         diffieHellmanClient: new wasmModule.EllipticCurveDiffieHellmanClientJs(),
         aesSymmetricCipher: new wasmModule.AesSymmetricCipherJs(),
@@ -109,7 +108,6 @@ const generateDiffieHellmanKeysStrategy = async (data) => {
     //
     //
     const secureContext = getSecureContext(data.id);
-    // secureContext.diffieHellmanClient.generateRandomKeysSimpler();
     secureContext.diffieHellmanClient.generateRandomKeys(secureContext.autoSeededRandomPool);
     secureContext.publicKey = secureContext.diffieHellmanClient.getPublicKeyAsHexStr();
     //
