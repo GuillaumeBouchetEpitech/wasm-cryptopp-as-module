@@ -11,7 +11,6 @@ import { DeriveRsaKeysWorker, RsaKeyPair } from "./internals/workers/DeriveRsaKe
 import { getRandomHexStr } from "./internals/getRandomHexStr";
 
 import {
-  EncryptedCommunicationState,
   EncryptedMessage,
   isBaseMessage,
   isEncryptedMessage,
@@ -30,6 +29,21 @@ import { printHexadecimalStrings } from "./internals/printHexadecimalStrings";
 //
 
 export type onLogCallback = (inLogMsg: string, inLogHeader?: string) => void;
+
+//
+//
+//
+
+//
+//
+//
+
+export enum EncryptedCommunicationState {
+  unencrypted,
+  initiated,
+  ready,
+  confirmed,
+};
 
 //
 //
@@ -389,7 +403,7 @@ export class AsyncSecureClient {
   private async _generateDiffieHellmanKeys() {
 
     this._log("------------------------------------");
-    this._log("Diffie Hellman Key Exchange");
+    this._log("Elliptic Curve Diffie Hellman Key Exchange");
     this._log("generating public/private keys");
     this._log("2048-bit MODP Group with 256-bit Prime Order Subgroup");
 
@@ -445,7 +459,7 @@ export class AsyncSecureClient {
     }
 
     this._log("------------------------------------");
-    this._log("Diffie Hellman Key Exchange");
+    this._log("Elliptic Curve Diffie Hellman Key Exchange");
     this._log(`computing shared secret`);
 
     this._log(`input publicKey`);
@@ -473,7 +487,7 @@ export class AsyncSecureClient {
     }
 
     this._log("------------------------------------");
-    this._log("AES GCM (Stream) Cipher");
+    this._log("AES CCM (Stream) Cipher");
     this._log("initializing");
     this._log("256bits key from computed shared secret");
 

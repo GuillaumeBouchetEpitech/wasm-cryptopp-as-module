@@ -1,7 +1,13 @@
 
 import { Logger } from "./Logger";
 
-export const printHexadecimalStrings = (logger: Logger, inHexStr: string, inStep: number, inAlign: "left" | "center" | "right") => {
+export const printHexadecimalStrings = (
+  logger: Logger,
+  inHexStr: string,
+  inStep: number,
+  inAlign: "left" | "center" | "right",
+  inSize: number = 11
+) => {
 
   const strSize = inHexStr.length.toString();
   let index = 0;
@@ -11,7 +17,7 @@ export const printHexadecimalStrings = (logger: Logger, inHexStr: string, inStep
     let currText = currLine;
     if (index > 0)
       currText = currText.padEnd(inStep, '_');
-    const coloredText = Logger.makeColor([128,128,64], currText);
+    const coloredText = Logger.makeSize(inSize, Logger.makeColor([128,128,64], currText));
 
     switch (inAlign) {
       case "left": {

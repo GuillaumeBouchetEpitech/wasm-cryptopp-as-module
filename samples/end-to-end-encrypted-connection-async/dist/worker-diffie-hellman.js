@@ -69,7 +69,6 @@ const createNewSecureContext = () => {
     _secureContextMap.set(keyStr, {
         autoSeededRandomPool: new wasmModule.AutoSeededRandomPoolJs(),
         diffieHellmanClient: new wasmModule.EllipticCurveDiffieHellmanClientJs(),
-        aesSymmetricCipher: new wasmModule.AesSymmetricCipherJs(),
     });
     return keyStr;
 };

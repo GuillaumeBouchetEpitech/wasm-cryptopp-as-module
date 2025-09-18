@@ -44,7 +44,9 @@ mindmap
     ["AES<br>=#62; encrypt()<br>=#62; decrypt()"]
       ["symmetric cipher (CBC)"]
       ["stream cipher (CTR)"]
-    ["Diffie Hellman<br>=#62; generate keys<br>=#62; compute shared secret"]
+    ["Keys Exchange"]
+      ["Diffie Hellman<br>=#62; generate keys<br>=#62; compute shared secret"]
+      ["Elliptic Curve Diffie Hellman<br>=#62; generate keys<br>=#62; compute shared secret"]
     ["Auto Seeded<br>Random Pool"]
     ["RSA<br>=#62; generate random<br>private keys<br>=#62; PEM import/export of private/public keys<br>=#62; sign with private keys<br>=#62; verify with public keys"]
 
@@ -59,6 +61,10 @@ mindmap
   * decrypt
 
 #### Diffie Hellman Client:
+  * generateKeys
+  * computeSharedSecret
+
+#### Elliptic Curve Diffie Hellman:
   * generateKeys
   * computeSharedSecret
 

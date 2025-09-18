@@ -65,13 +65,6 @@ export const isEncryptedMessage = (inValue: any): inValue is EncryptedMessage =>
 //
 //
 
-export enum EncryptedCommunicationState {
-  unencrypted,
-  initiated,
-  ready,
-  confirmed,
-};
-
 export interface SecurityPayload extends BaseMessage {
   type: MessageTypes.SecurityRequest | MessageTypes.SecurityResponse;
   signedPublicKey: string;

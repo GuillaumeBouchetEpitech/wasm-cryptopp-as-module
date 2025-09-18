@@ -81,7 +81,7 @@ class CrytpoppWasmModule {
     }
 }
 
-const printHexadecimalStrings$1 = (logger, inHexStr, inStep, inAlign) => {
+const printHexadecimalStrings$1 = (logger, inHexStr, inStep, inAlign, inSize = 11) => {
     const strSize = inHexStr.length.toString();
     let index = 0;
     while (index < inHexStr.length) {
@@ -89,7 +89,7 @@ const printHexadecimalStrings$1 = (logger, inHexStr, inStep, inAlign) => {
         let currText = currLine;
         if (index > 0)
             currText = currText.padEnd(inStep, '_');
-        const coloredText = Logger.makeColor([128, 128, 64], currText);
+        const coloredText = Logger.makeSize(inSize, Logger.makeColor([128, 128, 64], currText));
         switch (inAlign) {
             case "left": {
                 logger.alignedLog(inAlign, ` => {${index.toString().padStart(3, '_')} / ${strSize}} ${coloredText}`);
@@ -410,13 +410,13 @@ const isEncryptedMessage = (inValue) => {
 //
 //
 //
-var EncryptedCommunicationState;
+var EncryptedCommunicationState$1;
 (function (EncryptedCommunicationState) {
     EncryptedCommunicationState[EncryptedCommunicationState["unencrypted"] = 0] = "unencrypted";
     EncryptedCommunicationState[EncryptedCommunicationState["initiated"] = 1] = "initiated";
     EncryptedCommunicationState[EncryptedCommunicationState["ready"] = 2] = "ready";
     EncryptedCommunicationState[EncryptedCommunicationState["confirmed"] = 3] = "confirmed";
-})(EncryptedCommunicationState || (EncryptedCommunicationState = {}));
+})(EncryptedCommunicationState$1 || (EncryptedCommunicationState$1 = {}));
 const isSecurityResponsePayload = (inValue) => {
     return (typeof (inValue) === 'object' &&
         typeof (inValue.signedPublicKey) === 'string' &&
@@ -444,6 +444,19 @@ const printHexadecimalStrings = (onLogging, inHexStr, inStep) => {
     }
 };
 
+//
+//
+//
+//
+//
+//
+var EncryptedCommunicationState;
+(function (EncryptedCommunicationState) {
+    EncryptedCommunicationState[EncryptedCommunicationState["unencrypted"] = 0] = "unencrypted";
+    EncryptedCommunicationState[EncryptedCommunicationState["initiated"] = 1] = "initiated";
+    EncryptedCommunicationState[EncryptedCommunicationState["ready"] = 2] = "ready";
+    EncryptedCommunicationState[EncryptedCommunicationState["confirmed"] = 3] = "confirmed";
+})(EncryptedCommunicationState || (EncryptedCommunicationState = {}));
 //
 //
 //
@@ -697,7 +710,7 @@ class AsyncSecureClient {
     //region Helpers
     async _generateDiffieHellmanKeys() {
         this._log("------------------------------------");
-        this._log("Diffie Hellman Key Exchange");
+        this._log("Elliptic Curve Diffie Hellman Key Exchange");
         this._log("generating public/private keys");
         this._log("2048-bit MODP Group with 256-bit Prime Order Subgroup");
         if (!this._diffieHellmanWorker) {
@@ -737,7 +750,7 @@ class AsyncSecureClient {
             throw new Error("worker (workerObtainCipherKey) not initialized");
         }
         this._log("------------------------------------");
-        this._log("Diffie Hellman Key Exchange");
+        this._log("Elliptic Curve Diffie Hellman Key Exchange");
         this._log(`computing shared secret`);
         this._log(`input publicKey`);
         printHexadecimalStrings(this._log.bind(this), publicKey, 32);
@@ -758,7 +771,7 @@ class AsyncSecureClient {
             throw new Error("shared secret not initialized");
         }
         this._log("------------------------------------");
-        this._log("AES GCM (Stream) Cipher");
+        this._log("AES CCM (Stream) Cipher");
         this._log("initializing");
         this._log("256bits key from computed shared secret");
         const startTime = Date.now();
