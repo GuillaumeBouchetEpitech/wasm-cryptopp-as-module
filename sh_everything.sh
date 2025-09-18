@@ -48,7 +48,7 @@ mkdir -p "$DIR_DEPENDENCIES"
 
 echo "ensuring the cpp to wasm compiler (emsdk) is installed"
 
-EMSDK_VERSION=3.1.26
+EMSDK_VERSION=3.1.74
 
 sh sh_install_one_git_thirdparty.sh \
   "$DIR_DEPENDENCIES" \

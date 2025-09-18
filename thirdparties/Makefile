@@ -39,8 +39,8 @@ else ifeq ($(build_platform),web-wasm)
 
 DIR_LIB=		./lib/web-wasm
 
-NAME_CRYPTOPP=			$(DIR_LIB)/lib-cryptopp.bc
-NAME_CRYPTOPP_PEM=	$(DIR_LIB)/lib-cryptopp-pem.bc
+NAME_CRYPTOPP=			$(DIR_LIB)/lib-cryptopp.a
+NAME_CRYPTOPP_PEM=	$(DIR_LIB)/lib-cryptopp-pem.a
 
 endif
 

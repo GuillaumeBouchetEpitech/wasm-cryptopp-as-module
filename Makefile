@@ -65,8 +65,8 @@ ifeq ($(build_platform),native)
 NAME_LIB_CRYPTOPP=			./thirdparties/lib/native/lib-cryptopp.a
 NAME_LIB_CRYPTOPP_PEM=	./thirdparties/lib/native/lib-cryptopp-pem.a
 else ifeq ($(build_platform),web-wasm)
-NAME_LIB_CRYPTOPP=			./thirdparties/lib/web-wasm/lib-cryptopp.bc
-NAME_LIB_CRYPTOPP_PEM=	./thirdparties/lib/web-wasm/lib-cryptopp-pem.bc
+NAME_LIB_CRYPTOPP=			./thirdparties/lib/web-wasm/lib-cryptopp.a
+NAME_LIB_CRYPTOPP_PEM=	./thirdparties/lib/web-wasm/lib-cryptopp-pem.a
 endif
 
 #

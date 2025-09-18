@@ -3,6 +3,7 @@
 
 #include <string>
 #include <cstdint>
+// #include <vector>
 
 namespace helpers {
 
@@ -12,5 +13,6 @@ namespace helpers {
 
 	std::string hexStr_to_byteBuffer(const uint8_t* inDataPtr, std::size_t inDataLength);
 	std::string hexStr_to_byteBuffer(const std::string_view inStr);
+	// std::vector<unsigned char> hexStr_to_byteBuffer2(const uint8_t* inDataPtr, std::size_t inDataLength);
 
 }
