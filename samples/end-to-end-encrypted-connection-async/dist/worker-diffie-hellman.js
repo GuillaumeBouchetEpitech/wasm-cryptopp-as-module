@@ -141,6 +141,8 @@ const computeDiffieHellmanSharedSecretStrategy = async (data) => {
 };
 
 /// <reference no-default-lib="true"/>
+/// <reference lib="esnext" />
+/// <reference lib="webworker" />
 const _strategiesMap = new Map([
     [StrategiesTypes.initialize, initializeStrategy],
     [StrategiesTypes.create_secure_context, createSecureContextStrategy],

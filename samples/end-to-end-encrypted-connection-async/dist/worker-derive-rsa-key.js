@@ -159,6 +159,8 @@ const deriveRsaKeys = async (data) => {
 };
 
 /// <reference no-default-lib="true"/>
+/// <reference lib="esnext" />
+/// <reference lib="webworker" />
 const _strategiesMap = new Map([
     [StrategiesTypes$1.initialize, initializeStrategy],
     [StrategiesTypes$1.create_secure_context, createSecureContextStrategy],

@@ -131,18 +131,10 @@ var StrategiesTypes;
 
 const _workerMessageOnce$1 = async (inWorker) => {
     return new Promise((resolve, reject) => {
-        const _callback = (message) => {
-            inWorker.removeEventListener('message', _callback);
-            resolve(message.data);
-        };
         try {
-            inWorker.addEventListener('message', _callback);
+            inWorker.addEventListener('message', (message) => { resolve(message.data); }, { once: true });
         }
         catch (err) {
-            try {
-                inWorker.removeEventListener('message', _callback);
-            }
-            catch (ignored) { }
             reject(err);
         }
     });
@@ -243,18 +235,10 @@ class DiffieHellmanWorker {
 
 const _workerMessageOnce = async (inWorker) => {
     return new Promise((resolve, reject) => {
-        const _callback = (message) => {
-            inWorker.removeEventListener('message', _callback);
-            resolve(message.data);
-        };
         try {
-            inWorker.addEventListener('message', _callback);
+            inWorker.addEventListener('message', (message) => { resolve(message.data); }, { once: true });
         }
         catch (err) {
-            try {
-                inWorker.removeEventListener('message', _callback);
-            }
-            catch (ignored) { }
             reject(err);
         }
     });
@@ -407,16 +391,6 @@ const isEncryptedMessage = (inValue) => {
         typeof (inValue.size) === 'number' &&
         typeof (inValue.ivValue) === 'string');
 };
-//
-//
-//
-var EncryptedCommunicationState$1;
-(function (EncryptedCommunicationState) {
-    EncryptedCommunicationState[EncryptedCommunicationState["unencrypted"] = 0] = "unencrypted";
-    EncryptedCommunicationState[EncryptedCommunicationState["initiated"] = 1] = "initiated";
-    EncryptedCommunicationState[EncryptedCommunicationState["ready"] = 2] = "ready";
-    EncryptedCommunicationState[EncryptedCommunicationState["confirmed"] = 3] = "confirmed";
-})(EncryptedCommunicationState$1 || (EncryptedCommunicationState$1 = {}));
 const isSecurityResponsePayload = (inValue) => {
     return (typeof (inValue) === 'object' &&
         typeof (inValue.signedPublicKey) === 'string' &&
@@ -1042,6 +1016,8 @@ const runLogic = async (logger) => {
 };
 
 /// <reference no-default-lib="true"/>
+/// <reference lib="esnext" />
+/// <reference lib="dom" />
 // import { AsyncSecureClient } from "./logic/AsyncSecureClient";
 const findOrFailHtmlElement = (inId) => {
     const htmlElement = document.querySelector(inId);

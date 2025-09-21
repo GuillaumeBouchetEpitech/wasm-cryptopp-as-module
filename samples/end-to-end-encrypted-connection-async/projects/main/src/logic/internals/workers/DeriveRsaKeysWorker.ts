@@ -5,18 +5,9 @@ import { DeriveRsaKeys } from "../../../../../_common"
 
 const _workerMessageOnce = async (inWorker: Worker) => {
   return new Promise<any>((resolve, reject) => {
-    const _callback = (message: any) => {
-
-      inWorker.removeEventListener('message', _callback);
-      resolve(message.data);
-    }
     try {
-      inWorker.addEventListener('message', _callback);
+      inWorker.addEventListener('message', (message: any) => { resolve(message.data); }, { once: true });
     } catch (err) {
-      try {
-        inWorker.removeEventListener('message', _callback);
-      } catch (ignored) {}
-
       reject(err);
     }
   });
